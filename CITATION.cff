@@ -8,7 +8,7 @@ authors:
     email: "eng.hamzasolak@gmail.com"
     orcid: "https://orcid.org/0009-0004-7541-9620"
     affiliation: "Independent Researcher, Türkiye"
-version: "0.4.0"
+version: "0.5.0"
 date-released: "2026-11-22"
 repository-code: "https://github.com/hamzasolak/zerre"
 license: "MIT"

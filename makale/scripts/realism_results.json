@@ -7,77 +7,77 @@
     {
       "bits": 64,
       "label": "Float64",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.7
     },
     {
       "bits": 12,
       "label": "12-bit (4096 lvls)",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.7
     },
     {
       "bits": 8,
       "label": "8-bit (256 lvls)",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.7
     },
     {
       "bits": 6,
       "label": "6-bit (64 lvls)",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.6
     },
     {
       "bits": 5,
       "label": "5-bit (32 lvls)",
-      "ptq_acc": 94.9
+      "ptq_acc": 94.7
     },
     {
       "bits": 4,
       "label": "4-bit (16 lvls)",
-      "ptq_acc": 94.9
+      "ptq_acc": 94.8
     },
     {
       "bits": 3,
       "label": "3-bit (8 lvls)",
-      "ptq_acc": 94.6
+      "ptq_acc": 94.9
     },
     {
       "bits": 2,
       "label": "2-bit (4 lvls)",
-      "ptq_acc": 92.9
+      "ptq_acc": 92.7
     }
   ],
   "black_matrix": [
     {
       "fill_factor_pct": 100,
-      "uncal_acc": 91.4,
-      "head_recalibrated_acc": 91.4
+      "uncal_acc": 92.3,
+      "head_recalibrated_acc": 92.3
     },
     {
       "fill_factor_pct": 75,
-      "uncal_acc": 91.1,
-      "head_recalibrated_acc": 92.9
+      "uncal_acc": 91.3,
+      "head_recalibrated_acc": 91.9
     },
     {
       "fill_factor_pct": 56,
-      "uncal_acc": 90.7,
-      "head_recalibrated_acc": 92.0
+      "uncal_acc": 90.6,
+      "head_recalibrated_acc": 91.7
     },
     {
       "fill_factor_pct": 36,
-      "uncal_acc": 90.3,
-      "head_recalibrated_acc": 92.3
+      "uncal_acc": 90.5,
+      "head_recalibrated_acc": 92.2
     },
     {
       "fill_factor_pct": 25,
-      "uncal_acc": 90.7,
-      "head_recalibrated_acc": 92.3
+      "uncal_acc": 91.3,
+      "head_recalibrated_acc": 91.3
     }
   ],
   "zernike_aberration": [
     {
       "pv_waves": 0.0,
-      "uncompensated_acc": 77.5,
-      "head_only_acc": 77.5,
-      "pat_compensated_acc": 77.5
+      "uncompensated_acc": 77.4,
+      "head_only_acc": 77.4,
+      "pat_compensated_acc": 77.4
     },
     {
       "pv_waves": 1.0,
@@ -111,16 +111,32 @@
     }
   ],
   "fashion_mnist": {
-    "no_optics_8x8_linear": 76.2,
-    "no_optics_8x8_mlp": 83.2,
-    "random_32x32_8x8_linear": 62.3,
+    "no_optics_8x8_linear": 79.7,
+    "no_optics_8x8_mlp": 82.7,
+    "random_32x32_8x8_linear": 69.0,
     "pat_32x32_8x8_linear": 72.7,
     "pat_32x32_8x8_mlp": 78.5,
-    "no_optics_raw_ridge": 80.0,
-    "no_optics_raw_mlp": 85.0,
-    "random_32x32_mlp": 84.9,
-    "pat_32x32_ridge": 80.3,
-    "pat_32x32_perturbed_mlp": 81.2,
-    "pat_32x32_nominal_mlp": 84.4
+    "no_optics_raw_ridge": 81.5,
+    "no_optics_raw_mlp": 85.2,
+    "random_32x32_mlp": 85.6,
+    "pat_32x32_ridge": 82.0,
+    "pat_32x32_perturbed_mlp": 82.2,
+    "pat_32x32_nominal_mlp": 85.0,
+    "meta": {
+      "n_train_8x8": 3000,
+      "n_fit8": 2640,
+      "n_val8": 360,
+      "n_train_32x32": 6000,
+      "n_fit32": 5280,
+      "n_val32": 720,
+      "head": "matched_ce_adam",
+      "eval_noisy": false
+    }
+  },
+  "structural_mismatch": {
+    "defects": "perturbed LC LUT ±10% + camera gamma 0.90 + speckle + parametric shifts",
+    "uncompensated_acc": 71.0,
+    "head_only_acc": 78.4,
+    "pat_acc": 76.0
   }
 }

@@ -10,7 +10,8 @@
       19,
       42
     ],
-    "total_runtime_s": 51647.7
+    "benchmark_version": "v0.5",
+    "total_runtime_s": 6340.9
   },
   "physics_checks": {
     "grad_check_eps": 1e-06,
@@ -30,7 +31,9 @@
       "n_test": 1000,
       "cam_n": 8,
       "grid": 128,
-      "seed": 7
+      "seed": 7,
+      "head": "matched_ce_adam",
+      "ridge_is_diagnostic": true
     },
     "rows": [
       {
@@ -38,117 +41,198 @@
         "label": "1. Dijital Alan Havuzlama (Optik Yok) + Lineer",
         "opt_w": 0,
         "dig_w": 650,
-        "mean": 81.27,
-        "std": 0.55,
+        "mean": 87.0,
+        "std": 1.47,
         "values": [
-          81.0,
-          81.9,
-          80.9
-        ]
+          87.3,
+          88.3,
+          85.4
+        ],
+        "acc_ridge": {
+          "mean": 81.27,
+          "std": 0.55,
+          "values": [
+            81.0,
+            81.9,
+            80.9
+          ]
+        }
       },
       {
         "key": "digital_pca_linear",
         "label": "2. Dijital PCA-64 (Optik Yok) + Lineer",
         "opt_w": 0,
         "dig_w": 650,
-        "mean": 83.97,
-        "std": 1.29,
+        "mean": 87.73,
+        "std": 1.23,
         "values": [
-          84.9,
-          84.5,
-          82.5
-        ]
+          89.1,
+          86.7,
+          87.4
+        ],
+        "acc_ridge": {
+          "mean": 83.97,
+          "std": 1.29,
+          "values": [
+            84.9,
+            84.5,
+            82.5
+          ]
+        }
       },
       {
         "key": "free_space_linear",
         "label": "3. Yalnız Serbest Uzay Kırınımı (LC Yok) + Lineer",
         "opt_w": 0,
         "dig_w": 650,
-        "mean": 68.57,
-        "std": 0.95,
+        "mean": 75.53,
+        "std": 1.63,
         "values": [
-          67.6,
-          68.6,
-          69.5
-        ]
+          75.2,
+          77.3,
+          74.1
+        ],
+        "acc_ridge": {
+          "mean": 68.57,
+          "std": 0.95,
+          "values": [
+            67.6,
+            68.6,
+            69.5
+          ]
+        }
       },
       {
         "key": "passive_16_random_linear",
         "label": "4. Pasif Matris 16×16 (Rastgele, Kusurlu) + Lineer",
         "opt_w": 256,
         "dig_w": 650,
-        "mean": 69.0,
-        "std": 0.4,
+        "mean": 70.93,
+        "std": 1.39,
         "values": [
-          69.4,
-          69.0,
-          68.6
-        ]
+          72.1,
+          71.3,
+          69.4
+        ],
+        "acc_ridge": {
+          "mean": 69.0,
+          "std": 0.4,
+          "values": [
+            69.4,
+            69.0,
+            68.6
+          ]
+        }
       },
       {
         "key": "active_16_random_linear",
         "label": "5. Aktif Matris 16×16 (Rastgele, Kusurlu) + Lineer",
         "opt_w": 256,
         "dig_w": 650,
-        "mean": 67.43,
-        "std": 0.85,
+        "mean": 70.47,
+        "std": 2.51,
         "values": [
-          67.1,
-          68.4,
-          66.8
-        ]
+          70.2,
+          73.1,
+          68.1
+        ],
+        "acc_ridge": {
+          "mean": 67.43,
+          "std": 0.85,
+          "values": [
+            67.1,
+            68.4,
+            66.8
+          ]
+        }
       },
       {
         "key": "active_32_random_linear",
         "label": "6. 2. LCD 32×32 Aktif (Rastgele, Kusurlu) + Lineer",
         "opt_w": 1024,
         "dig_w": 650,
-        "mean": 67.77,
-        "std": 0.4,
+        "mean": 71.07,
+        "std": 1.55,
         "values": [
-          68.2,
-          67.7,
-          67.4
-        ]
+          72.2,
+          71.7,
+          69.3
+        ],
+        "acc_ridge": {
+          "mean": 67.77,
+          "std": 0.4,
+          "values": [
+            68.2,
+            67.7,
+            67.4
+          ]
+        }
       },
       {
         "key": "passive_16_pat_linear",
         "label": "7. Pasif Matris 16×16 + PAT (Kusurlu) + Lineer",
         "opt_w": 256,
         "dig_w": 650,
-        "mean": 73.53,
-        "std": 2.04,
+        "mean": 72.43,
+        "std": 2.93,
         "values": [
-          74.0,
-          75.3,
-          71.3
-        ]
+          70.5,
+          75.8,
+          71.0
+        ],
+        "acc_ridge": {
+          "mean": 69.5,
+          "std": 0.46,
+          "values": [
+            69.6,
+            69.9,
+            69.0
+          ]
+        }
       },
       {
         "key": "active_16_pat_linear",
         "label": "8. Aktif Matris 16×16 + PAT (Kusurlu) + Lineer",
         "opt_w": 256,
         "dig_w": 650,
-        "mean": 74.13,
-        "std": 0.75,
+        "mean": 74.1,
+        "std": 2.08,
         "values": [
-          75.0,
-          73.7,
-          73.7
-        ]
+          75.2,
+          75.4,
+          71.7
+        ],
+        "acc_ridge": {
+          "mean": 69.97,
+          "std": 0.64,
+          "values": [
+            69.6,
+            70.7,
+            69.6
+          ]
+        }
       },
       {
         "key": "active_32_pat_linear",
         "label": "9. 2. LCD 32×32 Aktif + PAT (Kusurlu) + Lineer",
         "opt_w": 1024,
         "dig_w": 650,
-        "mean": 77.57,
-        "std": 2.22,
+        "mean": 78.4,
+        "std": 2.31,
         "values": [
-          78.8,
-          78.9,
-          75.0
-        ]
+          78.2,
+          80.8,
+          76.2
+        ],
+        "acc_ridge": {
+          "mean": 73.7,
+          "std": 0.75,
+          "values": [
+            73.8,
+            74.4,
+            72.9
+          ]
+        }
       },
       {
         "key": "digital_area_mlp",
@@ -168,12 +252,12 @@
         "label": "11. 2. LCD 32×32 Aktif + PAT + Hibrit MLP",
         "opt_w": 1024,
         "dig_w": 19210,
-        "mean": 84.53,
-        "std": 1.47,
+        "mean": 86.13,
+        "std": 0.74,
         "values": [
-          86.2,
-          84.0,
-          83.4
+          86.7,
+          86.4,
+          85.3
         ]
       }
     ]
@@ -189,7 +273,9 @@
         7,
         19,
         42
-      ]
+      ],
+      "pat_mlp_epochs": 45,
+      "head_mlp_epochs": 45
     },
     "rows": [
       {
@@ -197,12 +283,17 @@
         "label": "Ham 28×28 (Optik Yok) + Ridge",
         "opt_w": 0,
         "dig_w": 7850,
-        "mean": 82.93,
-        "std": 1.7,
+        "mean": 85.43,
+        "std": 1.36,
         "values": [
-          83.6,
-          84.2,
-          81.0
+          86.7,
+          85.6,
+          84.0
+        ],
+        "ridge_alpha": [
+          1.0,
+          1.0,
+          1.0
         ]
       },
       {
@@ -223,12 +314,17 @@
         "label": "16×16 Aktif (Rastgele) + 16×16 Ridge (N=2500)",
         "opt_w": 256,
         "dig_w": 2570,
-        "mean": 81.73,
-        "std": 0.72,
+        "mean": 81.9,
+        "std": 1.08,
         "values": [
-          82.1,
           82.2,
-          80.9
+          82.8,
+          80.7
+        ],
+        "ridge_alpha": [
+          0.0001,
+          0.001,
+          0.0001
         ]
       },
       {
@@ -236,12 +332,17 @@
         "label": "16×16 Aktif (Rastgele) + 32×32 Ridge (N=2500)",
         "opt_w": 256,
         "dig_w": 10250,
-        "mean": 84.77,
-        "std": 1.0,
+        "mean": 84.13,
+        "std": 1.22,
         "values": [
           84.4,
-          85.9,
-          84.0
+          85.2,
+          82.8
+        ],
+        "ridge_alpha": [
+          0.001,
+          0.1,
+          0.0001
         ]
       },
       {
@@ -249,12 +350,17 @@
         "label": "32×32 Aktif (Rastgele) + 32×32 Ridge (N=6000)",
         "opt_w": 1024,
         "dig_w": 10250,
-        "mean": 85.57,
-        "std": 1.76,
+        "mean": 85.97,
+        "std": 2.05,
         "values": [
-          86.1,
-          87.0,
-          83.6
+          86.5,
+          87.7,
+          83.7
+        ],
+        "ridge_alpha": [
+          0.0001,
+          0.0001,
+          0.0001
         ]
       },
       {
@@ -275,170 +381,170 @@
         "label": "32×32 Aktif + PAT + MLP (Kusurlu Sistem)",
         "opt_w": 1024,
         "dig_w": 264970,
-        "mean": 89.77,
-        "std": 3.27,
+        "mean": 91.07,
+        "std": 1.9,
         "values": [
-          90.8,
-          92.4,
-          86.1
+          91.2,
+          92.9,
+          89.1
         ]
       },
       {
         "key": "opt_32_pat_nominal_mlp_6000",
-        "label": "32×32 Aktif + PAT + MLP (Kalibre İkiz)",
+        "label": "32×32 Aktif + PAT + MLP (Nominal İkiz — Üst Sınır)",
         "opt_w": 1024,
         "dig_w": 264970,
-        "mean": 94.37,
-        "std": 0.84,
+        "mean": 94.67,
+        "std": 0.55,
         "values": [
-          94.8,
-          94.9,
-          93.4
+          94.7,
+          95.2,
+          94.1
         ]
       }
     ]
   },
   "latency_cpu": {
     "n_runs": 50,
-    "median_ms": 0.78,
-    "mean_ms": 0.87,
-    "iqr_ms": 0.08,
-    "min_ms": 0.71,
-    "max_ms": 2.74
+    "median_ms": 1.04,
+    "mean_ms": 1.27,
+    "iqr_ms": 0.63,
+    "min_ms": 0.84,
+    "max_ms": 2.23
   },
   "robustness": {
     "n_test": 1000,
     "seed": 7,
     "grid": 128,
-    "base_acc": 94.8,
+    "base_acc": 94.7,
     "lcd_shifts_um": {
-      "0": 94.8,
-      "47": 94.0,
-      "94": 89.0,
-      "188": 68.2
-    },
-    "ito_shifts_um": {
-      "0": 94.8,
-      "47": 95.0,
-      "94": 94.8,
-      "188": 94.1
-    },
-    "cam_shifts_um": {
-      "0": 94.8,
-      "47": 94.0,
-      "94": 87.9,
+      "0": 94.7,
+      "47": 93.7,
+      "94": 88.4,
       "188": 68.3
     },
-    "axial_dz1_mm": {
-      "0.0": 94.8,
-      "1.0": 94.9,
-      "3.0": 95.1,
-      "8.0": 94.7
+    "ito_shifts_um": {
+      "0": 94.7,
+      "47": 94.6,
+      "94": 94.7,
+      "188": 94.5
     },
-    "combined_47um_1mm": 87.9
+    "cam_shifts_um": {
+      "0": 94.7,
+      "47": 93.7,
+      "94": 88.3,
+      "188": 68.7
+    },
+    "axial_dz1_mm": {
+      "0.0": 94.7,
+      "1.0": 94.6,
+      "3.0": 94.6,
+      "8.0": 94.3
+    },
+    "combined_47um_1mm": 88.4
   },
   "robustness_perturbed_head": {
     "n_test": 1000,
     "seed": 7,
     "grid": 128,
-    "base_acc": 87.8,
+    "base_acc": 89.0,
     "lcd_shifts_um": {
-      "0": 87.8,
-      "47": 89.5,
-      "94": 88.0,
-      "188": 75.4
+      "0": 89.0,
+      "47": 89.8,
+      "94": 88.6,
+      "188": 76.5
     },
     "ito_shifts_um": {
-      "0": 87.8,
-      "47": 87.6,
-      "94": 87.7,
-      "188": 88.5
+      "0": 89.0,
+      "47": 88.5,
+      "94": 88.5,
+      "188": 88.7
     },
     "cam_shifts_um": {
-      "0": 87.8,
-      "47": 89.4,
-      "94": 87.8,
-      "188": 77.3
+      "0": 89.0,
+      "47": 89.9,
+      "94": 89.1,
+      "188": 77.1
     },
     "axial_dz1_mm": {
-      "0.0": 87.8,
-      "1.0": 87.7,
-      "3.0": 87.8,
-      "8.0": 87.4
+      "0.0": 89.0,
+      "1.0": 89.1,
+      "3.0": 88.5,
+      "8.0": 87.9
     },
-    "combined_47um_1mm": 88.1
+    "combined_47um_1mm": 88.9
   },
   "environment_tests": {
     "n_test": 1000,
     "seed": 7,
-    "base_acc": 94.8,
+    "base_acc": 94.7,
     "temps": [
       {
         "temp_c": 20,
         "scale": 1.0306,
-        "acc": 94.8
+        "acc": 94.7
       },
       {
         "temp_c": 25,
         "scale": 1.0,
-        "acc": 94.8
+        "acc": 94.7
       },
       {
         "temp_c": 30,
         "scale": 0.9656,
-        "acc": 94.8
+        "acc": 94.7
       },
       {
         "temp_c": 35,
         "scale": 0.9262,
-        "acc": 94.9
+        "acc": 94.6
       },
       {
         "temp_c": 45,
         "scale": 0.8227,
-        "acc": 94.6
+        "acc": 94.4
       },
       {
         "temp_c": 55,
         "scale": 0.6245,
-        "acc": 92.2
+        "acc": 92.3
       }
     ],
     "stray_light": [
       {
         "leak_pct": 0,
-        "raw_acc": 94.8,
-        "dark_sub_acc": 94.8
+        "raw_acc": 94.7,
+        "dark_sub_acc": 94.7
       },
       {
         "leak_pct": 1,
-        "raw_acc": 68.3,
-        "dark_sub_acc": 94.8
+        "raw_acc": 64.1,
+        "dark_sub_acc": 94.4
       },
       {
         "leak_pct": 5,
-        "raw_acc": 11.4,
-        "dark_sub_acc": 94.3
+        "raw_acc": 9.8,
+        "dark_sub_acc": 93.7
       },
       {
         "leak_pct": 20,
         "raw_acc": 7.7,
-        "dark_sub_acc": 88.5
+        "dark_sub_acc": 88.2
       },
       {
         "leak_pct": 50,
         "raw_acc": 7.7,
-        "dark_sub_acc": 78.4
+        "dark_sub_acc": 78.2
       }
     ],
     "laser_drift": [
       {
         "eps": 0.02,
-        "acc": 94.8
+        "acc": 94.7
       },
       {
         "eps": 0.05,
-        "acc": 95.0
+        "acc": 94.7
       },
       {
         "eps": 0.1,
@@ -446,11 +552,11 @@
       },
       {
         "eps": -0.1,
-        "acc": 94.7
+        "acc": 94.2
       }
     ],
     "combined_30C_1pct_2pct": {
-      "raw_acc": 69.7,
+      "raw_acc": 64.4,
       "dark_sub_acc": 95.0
     }
   },
@@ -458,99 +564,99 @@
     {
       "bits": 64,
       "label": "Float64",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.7
     },
     {
       "bits": 12,
       "label": "12-bit (4096 lvls)",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.7
     },
     {
       "bits": 8,
       "label": "8-bit (256 lvls)",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.7
     },
     {
       "bits": 6,
       "label": "6-bit (64 lvls)",
-      "ptq_acc": 94.8
+      "ptq_acc": 94.6
     },
     {
       "bits": 5,
       "label": "5-bit (32 lvls)",
-      "ptq_acc": 94.9
+      "ptq_acc": 94.7
     },
     {
       "bits": 4,
       "label": "4-bit (16 lvls)",
-      "ptq_acc": 94.9
+      "ptq_acc": 94.8
     },
     {
       "bits": 3,
       "label": "3-bit (8 lvls)",
-      "ptq_acc": 94.6
+      "ptq_acc": 94.9
     },
     {
       "bits": 2,
       "label": "2-bit (4 lvls)",
-      "ptq_acc": 92.9
+      "ptq_acc": 92.7
     }
   ],
   "black_matrix": [
     {
       "fill_factor_pct": 100,
-      "uncal_acc": 91.4,
-      "head_recalibrated_acc": 91.4
+      "uncal_acc": 92.3,
+      "head_recalibrated_acc": 92.3
     },
     {
       "fill_factor_pct": 75,
-      "uncal_acc": 91.1,
-      "head_recalibrated_acc": 92.9
+      "uncal_acc": 91.3,
+      "head_recalibrated_acc": 91.9
     },
     {
       "fill_factor_pct": 56,
-      "uncal_acc": 90.7,
-      "head_recalibrated_acc": 92.0
+      "uncal_acc": 90.6,
+      "head_recalibrated_acc": 91.7
     },
     {
       "fill_factor_pct": 36,
-      "uncal_acc": 90.3,
-      "head_recalibrated_acc": 92.3
+      "uncal_acc": 90.5,
+      "head_recalibrated_acc": 92.2
     },
     {
       "fill_factor_pct": 25,
-      "uncal_acc": 90.7,
-      "head_recalibrated_acc": 92.3
+      "uncal_acc": 91.3,
+      "head_recalibrated_acc": 91.3
     }
   ],
   "zernike_multiseed": [
     {
       "pv_waves": 0.0,
       "uncompensated": {
-        "mean": 78.73,
-        "std": 2.14,
+        "mean": 78.6,
+        "std": 2.52,
         "values": [
-          77.5,
-          81.2,
-          77.5
+          77.4,
+          81.5,
+          76.9
         ]
       },
       "head_only": {
-        "mean": 78.73,
-        "std": 2.14,
+        "mean": 78.6,
+        "std": 2.52,
         "values": [
-          77.5,
-          81.2,
-          77.5
+          77.4,
+          81.5,
+          76.9
         ]
       },
       "pat_compensated": {
-        "mean": 78.73,
-        "std": 2.14,
+        "mean": 78.6,
+        "std": 2.52,
         "values": [
-          77.5,
-          81.2,
-          77.5
+          77.4,
+          81.5,
+          76.9
         ]
       }
     },
@@ -707,30 +813,30 @@
   ],
   "fashion_mnist_multiseed": {
     "no_optics_8x8_linear": {
-      "mean": 74.0,
-      "std": 1.97,
+      "mean": 77.93,
+      "std": 1.57,
       "values": [
-        76.2,
-        72.4,
-        73.4
+        79.7,
+        76.7,
+        77.4
       ]
     },
     "no_optics_8x8_mlp": {
-      "mean": 81.47,
-      "std": 1.8,
+      "mean": 81.43,
+      "std": 1.78,
       "values": [
-        83.2,
-        79.6,
-        81.6
+        82.7,
+        79.4,
+        82.2
       ]
     },
     "random_32x32_8x8_linear": {
-      "mean": 61.83,
-      "std": 0.72,
+      "mean": 66.87,
+      "std": 2.8,
       "values": [
-        62.3,
-        61.0,
-        62.2
+        69.0,
+        63.7,
+        67.9
       ]
     },
     "pat_32x32_8x8_linear": {
@@ -743,66 +849,106 @@
       ]
     },
     "pat_32x32_8x8_mlp": {
-      "mean": 77.53,
-      "std": 1.19,
+      "mean": 77.5,
+      "std": 1.25,
       "values": [
         78.5,
-        76.2,
+        76.1,
         77.9
       ]
     },
     "no_optics_raw_ridge": {
-      "mean": 79.07,
-      "std": 0.81,
+      "mean": 80.57,
+      "std": 0.95,
       "values": [
-        80.0,
-        78.5,
-        78.7
+        81.5,
+        79.6,
+        80.6
       ]
     },
     "no_optics_raw_mlp": {
-      "mean": 84.47,
-      "std": 0.55,
+      "mean": 85.17,
+      "std": 0.15,
       "values": [
-        85.0,
-        83.9,
-        84.5
+        85.2,
+        85.3,
+        85.0
       ]
     },
     "random_32x32_mlp": {
-      "mean": 83.97,
-      "std": 0.86,
+      "mean": 84.7,
+      "std": 0.85,
       "values": [
-        84.9,
-        83.8,
-        83.2
+        85.6,
+        84.6,
+        83.9
       ]
     },
     "pat_32x32_ridge": {
-      "mean": 79.5,
-      "std": 0.8,
+      "mean": 79.8,
+      "std": 1.93,
       "values": [
-        80.3,
-        78.7,
-        79.5
+        82.0,
+        78.4,
+        79.0
       ]
     },
     "pat_32x32_perturbed_mlp": {
-      "mean": 80.8,
-      "std": 1.15,
+      "mean": 81.47,
+      "std": 1.27,
       "values": [
-        81.2,
-        81.7,
-        79.5
+        82.2,
+        82.2,
+        80.0
       ]
     },
     "pat_32x32_nominal_mlp": {
-      "mean": 84.2,
-      "std": 0.44,
+      "mean": 84.43,
+      "std": 0.51,
       "values": [
-        84.4,
-        83.7,
-        84.5
+        85.0,
+        84.0,
+        84.3
+      ]
+    },
+    "meta": {
+      "n_train_8x8": 3000,
+      "n_fit8": 2640,
+      "n_val8": 360,
+      "n_train_32x32": 6000,
+      "n_fit32": 5280,
+      "n_val32": 720,
+      "head": "matched_ce_adam",
+      "eval_noisy": false
+    }
+  },
+  "structural_mismatch": {
+    "defects": "perturbed LC LUT ±10% + camera gamma 0.90 + speckle + parametric shifts",
+    "uncompensated": {
+      "mean": 71.3,
+      "std": 1.08,
+      "values": [
+        71.0,
+        70.4,
+        72.5
+      ]
+    },
+    "head_only": {
+      "mean": 79.13,
+      "std": 2.39,
+      "values": [
+        78.4,
+        81.8,
+        77.2
+      ]
+    },
+    "pat": {
+      "mean": 76.8,
+      "std": 1.65,
+      "values": [
+        76.0,
+        78.7,
+        75.7
       ]
     }
   }

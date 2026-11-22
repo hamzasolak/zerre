@@ -69,16 +69,19 @@ if TORCH_AVAILABLE:
             H = np.exp(1j * kz * z) * (arg > 0.0)
             return torch.tensor(H, dtype=torch.complex64)
 
-        def lc_phase_torch(self, V):
+        def lc_phase_torch(self, V, phi_scale=1.0, phi_tab=None):
+            """NumPy lc_phase ile aynı API: phi_scale sıcaklık/Δn ölçeği,
+            phi_tab opsiyonel pertürbe faz tablosu (yapısal uyumsuzluk)."""
+            tab = self.phi_tab if phi_tab is None else phi_tab
             Vc = torch.clamp(V, 0.0, 5.0)
             idx = torch.clamp(torch.searchsorted(self.v_tab, Vc, right=True) - 1,
                               0, len(self.v_tab) - 2)
             v0 = self.v_tab[idx]
             v1 = self.v_tab[idx + 1]
-            p0 = self.phi_tab[idx]
-            p1 = self.phi_tab[idx + 1]
+            p0 = tab[idx]
+            p1 = tab[idx + 1]
             t = (Vc - v0) / (v1 - v0 + 1e-12)
-            return p0 + t * (p1 - p0)
+            return (p0 + t * (p1 - p0)) * float(phi_scale)
 
         def effective_voltage(self, W_param):
             if self.drive_mode != "passive":

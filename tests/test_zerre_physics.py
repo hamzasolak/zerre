@@ -77,6 +77,62 @@ def test_pool_area_and_zernike_seeds():
     print("  [PASS] pool_area shape/bounds and Zernike seed independence verified.")
 
 
+def test_shift_crop_edge_loss():
+    """Kenar-kayıplı kaydırma: ışık sarmalanmaz, boşalan bölge sıfırlanır."""
+    a = np.zeros((4, 8, 8))
+    a[:, :, 3] = 1.0
+    shifted = zt.shift_crop(a, 0, 2)
+    assert np.allclose(shifted[:, :, 5], 1.0)
+    assert np.allclose(shifted[:, :, :2], 0.0)
+    assert float(shifted.sum()) == float(a.sum())
+    off = zt.shift_crop(a, 0, -3)
+    assert np.allclose(off[:, :, 0], 1.0)
+    assert float(off[:, :, -3:].sum()) == 0.0
+    edge = np.zeros((4, 8, 8))
+    edge[:, :, -1] = 1.0
+    wrapped = np.roll(edge, 1, axis=-1)
+    cropped = zt.shift_crop(edge, 0, 1)
+    assert float(wrapped[:, :, 0].sum()) == 32.0, "np.roll should wrap edge energy"
+    assert float(cropped[:, :, 0].sum()) == 0.0, "shift_crop must drop edge energy, not wrap it"
+    assert float(cropped.sum()) == 0.0
+    print("  [PASS] shift_crop edge-loss (no wrap-around) verified.")
+
+
+def test_phi_scale_explicit():
+    """Faz ölçeği artık açık parametre: global durum yok, çağrılar bağımsız."""
+    v = 2.5
+    base = zt.lc_phase(v)
+    hot = zt.lc_phase(v, phi_scale=1.2)
+    assert abs(float(hot) - 1.2 * float(base)) < 1e-12
+    assert abs(float(zt.lc_phase(v)) - float(base)) < 1e-12, "phi_scale leaked between calls"
+    g0 = zt.lc_phase_grad(v)
+    g1 = zt.lc_phase_grad(v, phi_scale=1.2)
+    assert abs(float(g1) - 1.2 * float(g0)) < 1e-12
+    twin = zt.ZerreTwin(n_grid=64, n_ito=8, cam_n=8, drive_mode="active")
+    rng = np.random.default_rng(3)
+    Xb = rng.uniform(0.0, 1.0, (2, 28, 28))
+    W = rng.uniform(1.3, 4.5, (8, 8))
+    F_nom = twin.forward_batch(Xb, W)
+    F_hot = twin.forward_batch(Xb, W, phi_scale=1.15)
+    F_nom2 = twin.forward_batch(Xb, W)
+    assert np.allclose(F_nom, F_nom2), "forward_batch phi_scale state leaked"
+    assert not np.allclose(F_nom, F_hot), "phi_scale had no effect"
+    tab = zt.PHI_TAB * 0.9
+    F_tab = twin.forward_batch(Xb, W, phi_tab=tab)
+    assert not np.allclose(F_nom, F_tab), "phi_tab had no effect"
+    print("  [PASS] Explicit phi_scale/phi_tab (no global state) verified.")
+
+
+def test_zernike_zero_pv_continuity():
+    """pv=0 ile pv>0 arasında demet zarfı basamağı kalmamalı."""
+    ab0 = zt.make_zernike_aberration(128, 0.0, seed=42)
+    ab_eps = zt.make_zernike_aberration(128, 0.01, seed=42)
+    env0 = np.abs(ab0)
+    assert np.all(env0 < 1.0), "beam envelope missing at pv=0"
+    assert np.allclose(env0, np.abs(ab_eps), atol=0.05), "envelope step between pv=0 and small pv"
+    print("  [PASS] Zernike beam-envelope continuity at pv=0 verified.")
+
+
 def test_server_status_lock():
     import start_server
     eng = start_server.LiveOpticalEngine(ROOT)
@@ -92,5 +148,8 @@ if __name__ == "__main__":
     test_alt_pleshko_limit()
     test_single_sd_floor_and_infer()
     test_pool_area_and_zernike_seeds()
+    test_shift_crop_edge_loss()
+    test_phi_scale_explicit()
+    test_zernike_zero_pv_continuity()
     test_server_status_lock()
     print("ALL TESTS PASSED.")

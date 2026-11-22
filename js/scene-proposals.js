@@ -1388,8 +1388,8 @@
     {
       code: 'MODEL H · ORTAK-YOL DİJİTAL İKİZ MİMARİSİ',
       flow: '532nm DPSS → Genişletici → mSLA 2K LCD (Giriş) → Z₁ Kırınım → Aktif LC/2.LCD → Analizör → CMOS |E|²',
-      tl: ['TARGET: MODEL-H (v0.4)', 'COMMON-PATH ASM OPTICS', 'TRAINING: PAT + HYBRID'],
-      tr: ['INPUT: mSLA 2K (~40$)', 'MNIST 3-SEED: 94.37%', 'CPU SIM: 0.78ms'],
+      tl: ['TARGET: MODEL-H (v0.5)', 'COMMON-PATH ASM OPTICS', 'TRAINING: PAT + HYBRID'],
+      tr: ['INPUT: mSLA 2K (~40$)', 'MNIST 3-SEED: 91.07% / 94.67%', 'CPU SIM: 1.04ms'],
     },
   ];
 

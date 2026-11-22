@@ -13,10 +13,10 @@
 
 | Path | Purpose |
 | :--- | :--- |
-| `zerre_twin.py` | Full scalar-wave ASM propagation, Alt–Pleshko passive-matrix model, exact Wirtinger complex-adjoint PAT trainer, leakage-free ablation, robustness/environment sweeps, and multi-seed `--paper-benchmark` suite (`v0.4`). |
+| `zerre_twin.py` | Full scalar-wave ASM propagation, Alt–Pleshko passive-matrix model, exact Wirtinger complex-adjoint PAT trainer, leakage-free matched CE-Adam ablation, structural model-mismatch test, robustness/environment sweeps, and multi-seed `--paper-benchmark` suite (`v0.5`). |
 | `zerre_pat_torch.py` | Optional PyTorch `nn.Module` (`ZerrePATLayer`) custom autograd bridge for forward/adjoint PAT workflows. |
 | `start_server.py`, `index.html`, `js/`, `css/` | Local HTTP server + interactive Three.js 3D optical bench & live digital-twin inference UI (`http://localhost:5501`). |
-| `tests/test_zerre_physics.py` | Standalone unit & sanity test suite verifying adjoint gradients, Alt–Pleshko math, `sd_floor` invariance, `pool_area`, and Zernike seed independence. |
+| `tests/test_zerre_physics.py` | Standalone 8-test physics & sanity suite verifying adjoint gradients, Alt–Pleshko math, `sd_floor` invariance, `pool_area`, Zernike seed independence, `shift_crop` boundary loss, explicit `phi_scale`, and Zernike `pv=0` continuity. |
 | `makale/` | Manuscript sources (LaTeX/BibTeX, HTML, PDF build scripts, Markdown, 300 DPI figures, and JSON benchmark artifacts). |
 
 ---

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-zerre_twin.py — Model H Dijital İkizi (v0.4)
+zerre_twin.py — Model H Dijital İkizi (v0.5)
 ════════════════════════════════════════════════════════════════════
 Model H optik zincirinin skaler dalga simülasyonu, fiziksel kısıt
 modelleri ve analitik Wirtinger-Adjoint PAT/SPSA eğitimi:
@@ -15,6 +15,18 @@ modelleri ve analitik Wirtinger-Adjoint PAT/SPSA eğitimi:
   [CMOS — |E|² yoğunluk]               ← havuzlanmış özellik vektörü
         │
   [Okuma Kafası: Ridge veya MLP]       ← dijital karar katmanı
+
+v0.4 → v0.5 (bağımsız hakem düzeltmeleri):
+  • EŞLEŞMİŞ KAFA ABLASYONU: tüm kontrol satırları artık PAT ile aynı CE-Adam
+    lineer kafayı (aynı fit/val bölmesi, epok, lr) kullanır; Ridge yalnız diyagnostik
+  • Eğitim bütçesi eşitliği: PAT+MLP epokları kıyas MLP'lerinkiyle aynı (Tablo II: 45)
+  • Kenar-kayıplı kaydırma (shift_crop): np.roll sarmal artefaktı kaldırıldı
+  • PHI_SCALE global durumu kaldırıldı → phi_scale/phi_tab parametreleri
+  • Zernike demet zarfı artık pv=0'da da uygulanır (süreksizlik yok)
+  • Fashion-MNIST: rastgele kontrol gürültü asimetrisi giderildi, N=6000 (5280/720)
+  • Ridge α düzenlileme taraması (doğrulamada seçilir)
+  • YAPISAL model-uyumsuzluğu planti: pertürbe LC LUT + kamera gamması + benek
+  • paper_results.json artık bölüm-bölüm checkpoint'lenir (paper_results_partial.json)
 
 v0.4 Yenilikleri:
   • Tam sızıntısız train/val/test ayrımı (run_ablation doğrulama seti X_tr'den bölünür)
@@ -75,31 +87,31 @@ V_TAB     = np.array([0.0, 1.0, 1.2, 2.0, 3.0, 5.0])       # volt (RMS)
 PHI_TAB   = np.array([4.97, 4.97, 4.20, 2.87, 1.22, 0.11]) # radyan
 PHI_SLOPE = np.diff(PHI_TAB) / np.diff(V_TAB)              # dφ/dV parçalı eğimler
 
-# Sıcaklık etkisi: Δn(T) Haller yaklaşımı ile ölçeklenir (25°C'de 1.0)
-PHI_SCALE = 1.0
-
-
 # ─────────────────────────────────────────────────────────────────
 #  ELEKTRO-OPTİK VE PASİF MATRİS FİZİĞİ
 # ─────────────────────────────────────────────────────────────────
-def lc_phase(V):
-    """Voltaj (V_rms) → faz gecikmesi Δφ (rad). §5.8.4 tablosunda interpolasyon."""
-    return np.interp(np.clip(V, 0.0, 5.0), V_TAB, PHI_TAB) * PHI_SCALE
+def lc_phase(V, phi_scale=1.0, phi_tab=None):
+    """Voltaj (V_rms) → faz gecikmesi Δφ (rad). §5.8.4 tablosunda interpolasyon.
+    phi_scale: Haller Δn(T) sıcaklık ölçeği vb. dış etken çarpanı (vekil ikizde 1.0).
+    phi_tab  : alternatif/pertürbe LUT (yapısal uyumsuzluk planti; None → PHI_TAB)."""
+    if phi_tab is None:
+        phi_tab = PHI_TAB
+    return np.interp(np.clip(V, 0.0, 5.0), V_TAB, phi_tab) * phi_scale
 
 
-def lc_phase_grad(V):
+def lc_phase_grad(V, phi_scale=1.0):
     """d(Δφ)/dV analitik parçalı türevi (rad/V). V ∈ (1.0, 5.0) aktif bölgedir."""
     V_arr = np.asarray(V, dtype=float)
     idx = np.clip(np.searchsorted(V_TAB, V_arr, side="right") - 1, 0, len(PHI_SLOPE) - 1)
-    grad = PHI_SLOPE[idx] * PHI_SCALE
+    grad = PHI_SLOPE[idx] * phi_scale
     grad = np.where((V_arr <= 0.0) | (V_arr >= 5.0), 0.0, grad)
     return grad
 
 
-def lc_jones(V):
+def lc_jones(V, phi_scale=1.0, phi_tab=None):
     """Çapraz polarizörler arasında 45° hizalı LC retarder Jones geçişi:
     t(Δφ) = sin(Δφ/2) · exp(i·Δφ/2)."""
-    phi = lc_phase(V)
+    phi = lc_phase(V, phi_scale, phi_tab)
     return np.sin(phi / 2.0) * np.exp(1j * phi / 2.0)
 
 
@@ -260,14 +272,14 @@ class ZerreTwin:
         return A
 
     # ── Ağırlık kodlama: parametre → hücre Jones maskesi ─────────
-    def ito_mask(self, W_param):
+    def ito_mask(self, W_param, phi_scale=1.0, phi_tab=None):
         if self.drive_mode == "none":
             M = np.zeros((self.N, self.N), dtype=complex)
             M[self.o_cell:self.o_cell + self.side,
               self.o_cell:self.o_cell + self.side] = 1.0
             return M
         V_eff = self.effective_voltage(W_param)
-        t_px  = lc_jones(V_eff)
+        t_px  = lc_jones(V_eff, phi_scale, phi_tab)
         tile  = np.repeat(np.repeat(t_px, self.rep, axis=0), self.rep, axis=1)
         M = np.zeros((self.N, self.N), dtype=complex)
         M[self.o_cell:self.o_cell + self.side,
@@ -291,15 +303,15 @@ class ZerreTwin:
         return feat.reshape(B, -1)
 
     # ── Tam ileri geçiş (tekil veya batch) ───────────────────────
-    def forward(self, img28, W_param):
+    def forward(self, img28, W_param, phi_scale=1.0, phi_tab=None):
         E = self.field_at_cell(img28)
-        E = E * self.ito_mask(W_param)
+        E = E * self.ito_mask(W_param, phi_scale, phi_tab)
         E = self.prop2(E)
         return self.camera(E)
 
-    def forward_batch(self, X, W_param, batch_size=128):
+    def forward_batch(self, X, W_param, batch_size=128, phi_scale=1.0, phi_tab=None):
         out = []
-        M = self.ito_mask(W_param).astype(np.complex64)
+        M = self.ito_mask(W_param, phi_scale, phi_tab).astype(np.complex64)
         for i in range(0, len(X), batch_size):
             E_in = self.encode_lcd(X[i:i + batch_size]).astype(np.complex64)
             E = self.prop1(E_in)
@@ -308,8 +320,8 @@ class ZerreTwin:
         return np.vstack(out)
 
     # ── Önbellekli ileri geçiş (Z1 yayılımı W'den bağımsız) ──────
-    def forward_cached(self, E_cell, W_param):
-        E = E_cell * self.ito_mask(W_param)
+    def forward_cached(self, E_cell, W_param, phi_scale=1.0, phi_tab=None):
+        E = E_cell * self.ito_mask(W_param, phi_scale, phi_tab)
         E = self.prop2(E)
         return self.camera(E)
 
@@ -333,6 +345,8 @@ class ZerreTwin:
         if E_cell_batch.dtype == np.complex64:
             M = M.astype(np.complex64)
         E_cam = E_cam_override if E_cam_override is not None else self.prop2(E_cell_batch * M)
+        # NOT: Geri geçiş her zaman NOMİNAL vekil modelde akar (PAT tanımı);
+        # plant'in phi_scale/phi_tab kusurları gradyana girmez.
 
         # 1) Ortalama havuzlama geri geçişi: dL/dI
         g_pool = grad_feat_batch.reshape(B, self.cam_n, self.cam_n) / float(p * p)
@@ -369,22 +383,38 @@ class ZerreTwin:
         return grad_V_eff
 
     # ── Web Arayüzü için Zenginleştirilmiş Tekil Çıkarım ─────────
-    def inspect_forward(self, img28, W_param):
+    def inspect_forward(self, img28, W_param, phi_scale=1.0, phi_tab=None):
         """Giriş, Z1 kırınım genliği, ITO faz haritası, CMOS yoğunluğu ve özellikleri döner."""
         E_in   = self.encode_lcd(img28)
         E_cell = self.prop1(E_in)
-        M      = self.ito_mask(W_param)
+        M      = self.ito_mask(W_param, phi_scale, phi_tab)
         E_cam  = self.prop2(E_cell * M)
         I_cam  = np.abs(E_cam) ** 2
         feat   = self.camera(E_cam)
         V_eff  = self.effective_voltage(W_param)
         return {
             "E_cell_amp": np.abs(E_cell),
-            "ito_phase":  lc_phase(V_eff),
+            "ito_phase":  lc_phase(V_eff, phi_scale, phi_tab),
             "ito_volt":   V_eff,
             "I_cam":      I_cam,
             "feat":       feat,
         }
+
+
+def shift_crop(arr, dy, dx):
+    """Kenar-kayıplı yanal kaydırma (son iki eksende; tekil veya toplu dizi).
+    np.roll'dan farklı olarak taşan ışık kenardan kaybolur ve boşalan kenar
+    sıfır kalır — sarmal (wrap-around) artefaktı üretmez. Pozitif dy aşağı,
+    pozitif dx sağa kaydırır."""
+    H, W = arr.shape[-2], arr.shape[-1]
+    out = np.zeros_like(arr)
+    sy = slice(max(0, -dy), min(H, H - dy))
+    ty = slice(max(0, dy), min(H, H + dy))
+    sx = slice(max(0, -dx), min(W, W - dx))
+    tx = slice(max(0, dx), min(W, W + dx))
+    if (sy.stop - sy.start) > 0 and (sx.stop - sx.start) > 0:
+        out[..., ty, tx] = arr[..., sy, sx]
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -546,6 +576,25 @@ def fit_ridge(F, y, n_cls, alpha=1e-3):
     return W
 
 
+RIDGE_ALPHAS = (1e-4, 1e-3, 1e-2, 1e-1, 1.0)
+
+
+def fit_ridge_val(F, y, n_cls, alphas=RIDGE_ALPHAS, val_frac=0.12):
+    """α düzenlileme katsayısını son %val_frac doğrulama diliminde seçen Ridge kafa.
+    Adaylar arasından en yüksek val doğruluğunu veren α ile (fit alt kümesinde
+    eğitilmiş) ağırlıkları ve seçilen α'yı döndürür."""
+    n_val = max(50, int(round(val_frac * len(y))))
+    Ff, yf = F[:-n_val], y[:-n_val]
+    Fv, yv = F[-n_val:], y[-n_val:]
+    best_a, best_acc, best_W = alphas[0], -1.0, None
+    for a in alphas:
+        W = fit_ridge(Ff, yf, n_cls, alpha=a)
+        acc = float((predict_ridge(Fv, W) == yv).mean())
+        if acc > best_acc:
+            best_a, best_acc, best_W = a, acc, W
+    return best_W, best_a
+
+
 def predict_ridge(F, W):
     Fb = np.hstack([F, np.ones((F.shape[0], 1))])
     return np.argmax(Fb @ W, axis=1)
@@ -680,16 +729,37 @@ class MLPHead:
 # ─────────────────────────────────────────────────────────────────
 #  PHYSICS-AWARE TRAINING (PAT — Wright et al., Nature 601, 2022)
 # ─────────────────────────────────────────────────────────────────
+def _make_speckle(n_grid, sigma, rng):
+    """Sabit çarpımsal benek perdesi: düşük-geçişli Gauss alanının üstel çarpanı.
+    Vekilin modellemediği kısmi-koherans yoğunluk dalgalanmasının yerine geçer;
+    ortalaması 1'e normalize edilir (enerji kazancı yok)."""
+    w = rng.normal(0.0, 1.0, (n_grid, n_grid))
+    fx = np.fft.fftfreq(n_grid)
+    FX, FY = np.meshgrid(fx, fx, indexing="xy")
+    low = np.exp(-((FX ** 2 + FY ** 2) / (2.0 * (6.0 / n_grid) ** 2)))
+    s = np.real(np.fft.ifft2(np.fft.fft2(w) * low))
+    s /= (s.std() + 1e-12)
+    m = np.exp(sigma * s)
+    return m / m.mean()
+
+
 class PhysicalPlantSimulator:
     """Gerçek donanımın kusurlarını taklit eden 'fiziksel' ileri geçiş kutusu.
     Vekil dijital ikiz (surrogate) bu kusurlardan habersizdir!
-      • 1px (47μm) LCD ve kamera yanal montaj kayması
+      • 1px (47μm) LCD ve kamera yanal montaj kayması (kenar-kayıplı)
       • +1.2mm Z1 mesafe tolerans sapması
       • 29°C çalışma sıcaklığı (Haller Δn kayması)
       • %2 lazer güç sapması + CMOS okuma gürültüsü
+
+    structural=True iken parametre-pertürbasyonuna ek YAPISAL uyumsuzluk eklenir
+    (vekilin modellemediği fizik):
+      • Pertürbe LC LUT: PHI_TAB her noktada ±%10 düzgün bozulur
+        (gerçek TN/ECB eğrisi vekilin parçalı-doğrusal tablosundan farklıdır)
+      • CMOS gamma doğrusalsızlığı: I → I^0.90
+      • Çarpımsal benek perdesi: sabit düşük-frekanslı yoğunluk dokusu
     """
 
-    def __init__(self, twin_ref, seed=42):
+    def __init__(self, twin_ref, seed=42, structural=False):
         self.N = twin_ref.N
         self.cam_n = twin_ref.cam_n
         self.twin_ref = twin_ref
@@ -699,28 +769,37 @@ class PhysicalPlantSimulator:
         self.laser_gain = 1.02
         self.noise_std  = 2e-4
         self.rng = np.random.default_rng(seed)
+        self.structural = structural
+        if structural:
+            rng_m = np.random.default_rng(seed + 777)
+            self.phi_tab_real = PHI_TAB * (1.0 + 0.10 * rng_m.uniform(-1.0, 1.0, PHI_TAB.shape))
+            self.cam_gamma = 0.90
+            self.speckle = _make_speckle(self.N, 0.10, rng_m)
+        else:
+            self.phi_tab_real = None
+            self.cam_gamma = 1.0
+            self.speckle = None
 
     def precompute_cells(self, X, batch_size=128):
         out = []
         for i in range(0, len(X), batch_size):
             E = self.twin_ref.encode_lcd(X[i:i + batch_size]).astype(np.complex64)
-            E = np.roll(E, (1, 0), axis=(-2, -1))          # 47μm LCD montaj kayması
+            E = shift_crop(E, 1, 0)                        # 47μm LCD montaj kayması
             out.append(self.prop1_real(E))
         return np.concatenate(out, axis=0)
 
     def forward_cached(self, E_cell_real, W_param, noisy=True):
-        global PHI_SCALE
-        old_scale = PHI_SCALE
-        PHI_SCALE = self.temp_scale
-        try:
-            M = self.twin_ref.ito_mask(W_param)
-            if E_cell_real.dtype == np.complex64:
-                M = M.astype(np.complex64)
-        finally:
-            PHI_SCALE = old_scale
+        M = self.twin_ref.ito_mask(W_param, phi_scale=self.temp_scale,
+                                   phi_tab=self.phi_tab_real)
+        if E_cell_real.dtype == np.complex64:
+            M = M.astype(np.complex64)
         E = self.prop2_real(E_cell_real * M)
         I = (np.abs(E) ** 2) * self.laser_gain
-        I = np.roll(I, (0, 1), axis=(-2, -1))              # 47μm kamera kayması
+        I = shift_crop(I, 0, 1)                            # 47μm kamera kayması
+        if self.speckle is not None:
+            I = I * self.speckle
+        if self.cam_gamma != 1.0:
+            I = np.power(np.maximum(I, 0.0), self.cam_gamma)
         p = self.N // self.cam_n
         lim = p * self.cam_n
         B = I.shape[0]
@@ -1041,9 +1120,11 @@ def fit_pca_features(X_tr, X_te, k=64):
 
 
 def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
-                 epochs_lin=18, epochs_mlp=22, bs=128):
+                 epochs_lin=18, epochs_mlp=40, bs=128):
     """Akademik makale için tam sızıntısız kontrollü ablasyon deneyi:
-    Doğrulama kümesi (X_val, y_val) yalnızca X_tr içinden ayrılır; X_te sadece son ölçümde kullanılır."""
+    Doğrulama kümesi (X_val, y_val) yalnızca X_tr içinden ayrılır; X_te sadece son ölçümde kullanılır.
+    v0.5: kontrol satırları PAT ile aynı CE-Adam lineer kafayı kullanır (eşleşmiş başlık);
+    MLP satırları da aynı epok bütçesini (epochs_mlp) paylaşır."""
     t_ab = time.time()
     rng = np.random.default_rng(seed)
     cache = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mnist_cache")
@@ -1067,27 +1148,44 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
     rows = []
 
     def eval_ridge_feats(F_tr_raw, F_te_raw):
+        """Diyagnostik kapalı-form Ridge okuyucu (tüm X_tr üzerinde, α sabit)."""
         mu_f, sd_f = fit_standardizer(F_tr_raw)
         W_f = fit_ridge(apply_standardizer(F_tr_raw, mu_f, sd_f), y_tr, n_cls)
         return float((predict_ridge(apply_standardizer(F_te_raw, mu_f, sd_f), W_f) == y_te).mean())
 
-    # 1) Kontrol A: Gerçek 8×8 alan-ortalaması (optik yok) + Lineer
+    def eval_ce_feats(F_tr_raw, F_te_raw, head_rng, F_tr_noisy=None):
+        """PAT ile eşleşmiş CE-Adam lineer kafa: aynı 2640/360 fit/val bölmesi,
+        aynı epok (epochs_lin), aynı lr_head ve aynı batch boyutu. Ölçekleyici
+        gürültüsüz fit özelliklerinden kurulur; kafa gürültülü fit özellikleriyle
+        eğitilir (PAT satır 904/873 paritesi), val/test gürültüsüz ölçülür."""
+        mu_f, sd_f = fit_standardizer(F_tr_raw[:n_fit])
+        F_fit = F_tr_raw[:n_fit] if F_tr_noisy is None else F_tr_noisy[:n_fit]
+        W_f = _fit_ce_linear_head(
+            apply_standardizer(F_fit, mu_f, sd_f), y_fit,
+            apply_standardizer(F_tr_raw[n_fit:], mu_f, sd_f), y_val,
+            n_cls, epochs=epochs_lin, bs=bs, lr_head=2.5e-2, rng=head_rng)
+        return float((predict_ridge(apply_standardizer(F_te_raw, mu_f, sd_f), W_f) == y_te).mean())
+
+    # 1) Kontrol A: Gerçek 8×8 alan-ortalaması (optik yok) + Lineer (CE)
     F_area_tr = pool_area(X_tr, cam_n)
     F_area_te = pool_area(X_te, cam_n)
-    acc_area_lin = eval_ridge_feats(F_area_tr, F_area_te)
-    rows.append(("digital_area_linear", "1. Dijital Alan Havuzlama (Optik Yok) + Lineer", 0, d_lin_params, acc_area_lin))
+    acc_area_lin = eval_ce_feats(F_area_tr, F_area_te, np.random.default_rng(seed + 901))
+    rows.append(("digital_area_linear", "1. Dijital Alan Havuzlama (Optik Yok) + Lineer", 0, d_lin_params,
+                 acc_area_lin, eval_ridge_feats(F_area_tr, F_area_te)))
 
-    # 2) Kontrol B: Yalnız eğitim verisiyle PCA-64 (optik yok) + Lineer
+    # 2) Kontrol B: Yalnız eğitim verisiyle PCA-64 (optik yok) + Lineer (CE)
     F_pca_tr, F_pca_te = fit_pca_features(X_tr, X_te, k=d_feat)
-    acc_pca_lin = eval_ridge_feats(F_pca_tr, F_pca_te)
-    rows.append(("digital_pca_linear", f"2. Dijital PCA-{d_feat} (Optik Yok) + Lineer", 0, d_lin_params, acc_pca_lin))
+    acc_pca_lin = eval_ce_feats(F_pca_tr, F_pca_te, np.random.default_rng(seed + 902))
+    rows.append(("digital_pca_linear", f"2. Dijital PCA-{d_feat} (Optik Yok) + Lineer", 0, d_lin_params,
+                 acc_pca_lin, eval_ridge_feats(F_pca_tr, F_pca_te)))
 
-    # 3) Kontrol C: Yalnız serbest uzay kırınımı (LC yok) + Lineer
+    # 3) Kontrol C: Yalnız serbest uzay kırınımı (LC yok) + Lineer (CE)
     twin_none = ZerreTwin(grid, n_ito=16, cam_n=cam_n, drive_mode="none")
     F_free_tr = twin_none.forward_batch(X_tr, np.zeros((16, 16)), batch_size=256)
     F_free_te = twin_none.forward_batch(X_te, np.zeros((16, 16)), batch_size=256)
-    acc_free = eval_ridge_feats(F_free_tr, F_free_te)
-    rows.append(("free_space_linear", "3. Yalnız Serbest Uzay Kırınımı (LC Yok) + Lineer", 0, d_lin_params, acc_free))
+    acc_free = eval_ce_feats(F_free_tr, F_free_te, np.random.default_rng(seed + 903))
+    rows.append(("free_space_linear", "3. Yalnız Serbest Uzay Kırınımı (LC Yok) + Lineer", 0, d_lin_params,
+                 acc_free, eval_ridge_feats(F_free_tr, F_free_te)))
 
     # Ortak ön-hesaplama: Z1 yayılımı yalnızca grid ve X'e bağlıdır (tek kopya → düşük RAM, hızlı PAT)
     twin_pas  = ZerreTwin(grid, n_ito=16, cam_n=cam_n, drive_mode="passive")
@@ -1109,29 +1207,32 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
         "E_phy_val": E_phy_tr[n_fit:],
     }
 
-    # 4) Pasif Matris 16×16 (Alt-Pleshko RMS) — Rastgele + Lineer
+    # 4) Pasif Matris 16×16 (Alt-Pleshko RMS) — Rastgele + Lineer (CE; gürültülü fit / gürültüsüz ölçüm)
     U_rand = rng.uniform(-1.0, 1.0, (16, 16))
-    acc_pas_rand = eval_ridge_feats(
-        plant_pas.forward_cached(E_phy_tr, U_rand, noisy=False),
-        plant_pas.forward_cached(E_phy_te, U_rand, noisy=False),
-    )
-    rows.append(("passive_16_random_linear", "4. Pasif Matris 16×16 (Rastgele, Kusurlu) + Lineer", 256, d_lin_params, acc_pas_rand))
+    F_pr_tr = plant_pas.forward_cached(E_phy_tr, U_rand, noisy=False)
+    F_pr_te = plant_pas.forward_cached(E_phy_te, U_rand, noisy=False)
+    F_pr_tr_n = plant_pas.forward_cached(E_phy_tr[:n_fit], U_rand, noisy=True)
+    acc_pas_rand = eval_ce_feats(F_pr_tr, F_pr_te, np.random.default_rng(seed + 904), F_tr_noisy=F_pr_tr_n)
+    rows.append(("passive_16_random_linear", "4. Pasif Matris 16×16 (Rastgele, Kusurlu) + Lineer", 256, d_lin_params,
+                 acc_pas_rand, eval_ridge_feats(F_pr_tr, F_pr_te)))
 
-    # 5) Aktif Matris 16×16 — Rastgele + Lineer
+    # 5) Aktif Matris 16×16 — Rastgele + Lineer (CE)
     V_rand16 = rng.uniform(1.2, 3.5, (16, 16))
-    acc_act_rand = eval_ridge_feats(
-        plant_act.forward_cached(E_phy_tr, V_rand16, noisy=False),
-        plant_act.forward_cached(E_phy_te, V_rand16, noisy=False),
-    )
-    rows.append(("active_16_random_linear", "5. Aktif Matris 16×16 (Rastgele, Kusurlu) + Lineer", 256, d_lin_params, acc_act_rand))
+    F_ar_tr = plant_act.forward_cached(E_phy_tr, V_rand16, noisy=False)
+    F_ar_te = plant_act.forward_cached(E_phy_te, V_rand16, noisy=False)
+    F_ar_tr_n = plant_act.forward_cached(E_phy_tr[:n_fit], V_rand16, noisy=True)
+    acc_act_rand = eval_ce_feats(F_ar_tr, F_ar_te, np.random.default_rng(seed + 905), F_tr_noisy=F_ar_tr_n)
+    rows.append(("active_16_random_linear", "5. Aktif Matris 16×16 (Rastgele, Kusurlu) + Lineer", 256, d_lin_params,
+                 acc_act_rand, eval_ridge_feats(F_ar_tr, F_ar_te)))
 
-    # 6) 2. mSLA TFT-LCD 32×32 — Rastgele + Lineer (eşleşmiş kontrol)
+    # 6) 2. mSLA TFT-LCD 32×32 — Rastgele + Lineer (CE; eşleşmiş kontrol)
     V_rand32 = rng.uniform(1.2, 3.5, (32, 32))
-    acc_act32_rand = eval_ridge_feats(
-        plant_lcd2.forward_cached(E_phy_tr, V_rand32, noisy=False),
-        plant_lcd2.forward_cached(E_phy_te, V_rand32, noisy=False),
-    )
-    rows.append(("active_32_random_linear", "6. 2. LCD 32×32 Aktif (Rastgele, Kusurlu) + Lineer", 1024, d_lin_params, acc_act32_rand))
+    F_a32_tr = plant_lcd2.forward_cached(E_phy_tr, V_rand32, noisy=False)
+    F_a32_te = plant_lcd2.forward_cached(E_phy_te, V_rand32, noisy=False)
+    F_a32_tr_n = plant_lcd2.forward_cached(E_phy_tr[:n_fit], V_rand32, noisy=True)
+    acc_act32_rand = eval_ce_feats(F_a32_tr, F_a32_te, np.random.default_rng(seed + 906), F_tr_noisy=F_a32_tr_n)
+    rows.append(("active_32_random_linear", "6. 2. LCD 32×32 Aktif (Rastgele, Kusurlu) + Lineer", 1024, d_lin_params,
+                 acc_act32_rand, eval_ridge_feats(F_a32_tr, F_a32_te)))
     print(f"  [Seed {seed}] Dijital + Rastgele kontroller tamam ({time.time() - t_ab:.1f}s)", flush=True)
 
     # 7) Pasif Matris 16×16 + PAT (X_val üzerinde erken durdurma)
@@ -1143,7 +1244,9 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
     )
     F_te_p = fwd_p(E_phy_te, W_pat_p, False)
     acc_pas_pat = float((predict_ridge((F_te_p - mu_p) / sd_p, Wout_p) == y_te).mean())
-    rows.append(("passive_16_pat_linear", "7. Pasif Matris 16×16 + PAT (Kusurlu) + Lineer", 256, d_lin_params, acc_pas_pat))
+    F_tr_p = np.vstack([fwd_p(E_phy_tr[i:i + 256], W_pat_p, False) for i in range(0, n_tr, 256)])
+    rows.append(("passive_16_pat_linear", "7. Pasif Matris 16×16 + PAT (Kusurlu) + Lineer", 256, d_lin_params,
+                 acc_pas_pat, eval_ridge_feats(F_tr_p, F_te_p)))
     print(f"  [Seed {seed}] Pasif 16×16 PAT tamam: %{acc_pas_pat * 100:.2f} ({time.time() - t_ab:.1f}s)", flush=True)
 
     # 8) Aktif Matris 16×16 + PAT
@@ -1155,7 +1258,9 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
     )
     F_te_a = fwd_a(E_phy_te, W_pat_a, False)
     acc_act_pat = float((predict_ridge((F_te_a - mu_a) / sd_a, Wout_a) == y_te).mean())
-    rows.append(("active_16_pat_linear", "8. Aktif Matris 16×16 + PAT (Kusurlu) + Lineer", 256, d_lin_params, acc_act_pat))
+    F_tr_a = np.vstack([fwd_a(E_phy_tr[i:i + 256], W_pat_a, False) for i in range(0, n_tr, 256)])
+    rows.append(("active_16_pat_linear", "8. Aktif Matris 16×16 + PAT (Kusurlu) + Lineer", 256, d_lin_params,
+                 acc_act_pat, eval_ridge_feats(F_tr_a, F_te_a)))
     print(f"  [Seed {seed}] Aktif 16×16 PAT tamam: %{acc_act_pat * 100:.2f} ({time.time() - t_ab:.1f}s)", flush=True)
 
     # 9) 2. LCD 32×32 Aktif + PAT + Lineer
@@ -1167,7 +1272,9 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
     )
     F_te_32 = fwd_32(E_phy_te, W_pat_32, False)
     acc_lcd2_pat = float((predict_ridge((F_te_32 - mu_32) / sd_32, Wout_32) == y_te).mean())
-    rows.append(("active_32_pat_linear", "9. 2. LCD 32×32 Aktif + PAT (Kusurlu) + Lineer", 1024, d_lin_params, acc_lcd2_pat))
+    F_tr_32 = np.vstack([fwd_32(E_phy_tr[i:i + 256], W_pat_32, False) for i in range(0, n_tr, 256)])
+    rows.append(("active_32_pat_linear", "9. 2. LCD 32×32 Aktif + PAT (Kusurlu) + Lineer", 1024, d_lin_params,
+                 acc_lcd2_pat, eval_ridge_feats(F_tr_32, F_te_32)))
     print(f"  [Seed {seed}] Aktif 32×32 PAT Lin tamam: %{acc_lcd2_pat * 100:.2f} ({time.time() - t_ab:.1f}s)", flush=True)
 
     # 10) Eşleşmiş Dijital Kontrol: 8×8 Alan Havuzlama (Optik Yok) + 256-Nöron MLP
@@ -1176,12 +1283,12 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
     mlp_area.train(
         apply_standardizer(F_area_tr[:n_fit], mu_am, sd_am), y_fit,
         apply_standardizer(F_area_tr[n_fit:], mu_am, sd_am), y_val,
-        epochs=40, bs=bs, lr=2e-3, verbose=False
+        epochs=epochs_mlp, bs=bs, lr=2e-3, verbose=False
     )
     acc_area_mlp = float((mlp_area.predict(apply_standardizer(F_area_te, mu_am, sd_am)) == y_te).mean())
-    rows.append(("digital_area_mlp", "10. Dijital Alan Havuzlama (Optik Yok) + MLP", 0, mlp_area.n_params(), acc_area_mlp))
+    rows.append(("digital_area_mlp", "10. Dijital Alan Havuzlama (Optik Yok) + MLP", 0, mlp_area.n_params(), acc_area_mlp, None))
 
-    # 11) 2. LCD 32×32 Aktif + PAT + Hibrit MLP
+    # 11) 2. LCD 32×32 Aktif + PAT + Hibrit MLP (epok bütçesi kontrolle eşit)
     W_pat_h, mu_h, sd_h, _, mlp_h, _, fwd_h = pat_train(
         twin_lcd2, X_fit, y_fit, X_val, y_val, V_rand32, n_cls,
         epochs=epochs_mlp, bs=bs, lr_opt=0.07, lr_head=2.5e-3,
@@ -1190,22 +1297,24 @@ def run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=7,
     )
     F_te_h = fwd_h(E_phy_te, W_pat_h, False)
     acc_hyb_pat = float((mlp_h.predict((F_te_h - mu_h) / sd_h) == y_te).mean())
-    rows.append(("active_32_pat_mlp", "11. 2. LCD 32×32 Aktif + PAT + Hibrit MLP", 1024, mlp_h.n_params(), acc_hyb_pat))
+    rows.append(("active_32_pat_mlp", "11. 2. LCD 32×32 Aktif + PAT + Hibrit MLP", 1024, mlp_h.n_params(), acc_hyb_pat, None))
 
     del E_phy_tr, E_phy_te, E_sur_fit, pre_pack
     gc.collect()
 
     print(f"  {'Mimari / Konfigürasyon':54s} {'Optik W':>7s} {'Dijital W':>9s} {'TEST':>7s}", flush=True)
     print("  " + "─" * 78, flush=True)
-    for _, name, ow, dw, acc in rows:
+    for _, name, ow, dw, acc, _ in rows:
         print(f"  {name:54s} {ow:7d} {dw:9,d} %{acc * 100:5.2f}", flush=True)
     print("═" * 82, flush=True)
     return {
         "config": {"n_train": n_tr, "n_fit": n_fit, "n_val": n_val, "n_test": n_test,
-                   "cam_n": cam_n, "grid": grid, "seed": seed},
+                   "cam_n": cam_n, "grid": grid, "seed": seed,
+                   "head": "matched_ce_adam", "ridge_is_diagnostic": True},
         "rows": [
-            {"key": k, "label": lbl, "opt_w": ow, "dig_w": dw, "acc_pct": round(acc * 100.0, 2)}
-            for k, lbl, ow, dw, acc in rows
+            {"key": k, "label": lbl, "opt_w": ow, "dig_w": dw, "acc_pct": round(acc * 100.0, 2),
+             "acc_ridge_pct": (round(acc_r * 100.0, 2) if acc_r is not None else None)}
+            for k, lbl, ow, dw, acc, acc_r in rows
         ],
     }
 
@@ -1357,10 +1466,11 @@ def predict_photo(img_path, model_path):
 #  MEKANİK DAYANIM VE ÇEVRESEL HASSASİYET TESTLERİ
 # ─────────────────────────────────────────────────────────────────
 def forward_perturbed(twin, img, W_volt, lcd_px=0, ito_px=0, dz1_mm=0.0, cam_px=0):
-    """Tek eksenli yatay yanal kaymalar (lcd_px, ito_px, cam_px * 47μm) ve eksenel dz1_mm uygular."""
+    """Tek eksenli yatay yanal kaymalar (lcd_px, ito_px, cam_px * 47μm) ve eksenel dz1_mm uygular.
+    Yanal kaymalar kenar-kayıplıdır (shift_crop): ışık kenardan kaybolur, sarma artefaktı yok."""
     E = twin.encode_lcd(img)
     if lcd_px:
-        E = np.roll(E, lcd_px, axis=-1)
+        E = shift_crop(E, 0, lcd_px)
     if dz1_mm:
         prop = AngularSpectrum(twin.N, PIX, LAMBDA, Z1 + dz1_mm * 1e-3)
         E = prop(E)
@@ -1368,11 +1478,11 @@ def forward_perturbed(twin, img, W_volt, lcd_px=0, ito_px=0, dz1_mm=0.0, cam_px=
         E = twin.prop1(E)
     M = twin.ito_mask(W_volt)
     if ito_px:
-        M = np.roll(M, ito_px, axis=-1)
+        M = shift_crop(M, 0, ito_px)
     E = twin.prop2(E * M)
     I = np.abs(E) ** 2
     if cam_px:
-        I = np.roll(I, cam_px, axis=-1)
+        I = shift_crop(I, 0, cam_px)
     p = twin.N // twin.cam_n
     lim = p * twin.cam_n
     if I.ndim == 2:
@@ -1452,7 +1562,6 @@ def haller_scale(T_c_deg):
 
 
 def env_test(model_or_tuple, n_test=1000, seed=7):
-    global PHI_SCALE
     twin, d = _resolve_model(model_or_tuple)
     rng   = np.random.default_rng(seed)
     cache = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mnist_cache")
@@ -1465,8 +1574,8 @@ def env_test(model_or_tuple, n_test=1000, seed=7):
             return np.argmax(h @ d["mlp_W2"] + d["mlp_b2"], axis=1)
         return np.argmax(np.hstack([f, np.ones((len(f), 1))]) @ d["Wout"], axis=1)
 
-    def feats():
-        return twin.forward_batch(X, d["W_volt"])
+    def feats(phi_scale=1.0):
+        return twin.forward_batch(X, d["W_volt"], phi_scale=phi_scale)
 
     print("═" * 70)
     print(f"  ÇEVRESEL HASSASİYET TESTİ · {n_test} MNIST test örneği (Seed={seed})")
@@ -1481,14 +1590,13 @@ def env_test(model_or_tuple, n_test=1000, seed=7):
     print("  1) SICAKLIK  (Δn(T) · Haller · T_c=59°C · kalibrasyonsuz)")
     temp_res = [{"temp_c": 25, "scale": 1.0, "acc": round(base, 2)}]
     for T in [20, 30, 35, 45, 55]:
-        PHI_SCALE = haller_scale(T)
-        a = float((head(feats()) == y).mean()) * 100.0
+        sc = haller_scale(T)
+        a = float((head(feats(sc)) == y).mean()) * 100.0
         dus = a - base
-        temp_res.append({"temp_c": T, "scale": round(PHI_SCALE, 4), "acc": round(a, 2)})
+        temp_res.append({"temp_c": T, "scale": round(sc, 4), "acc": round(a, 2)})
         isaret = "✓" if abs(dus) < 2 else ("⚠" if abs(dus) < 10 else "✗")
-        print(f"  {isaret} T={T:2d}°C  (Δn ölçeği {PHI_SCALE:.3f})          "
+        print(f"  {isaret} T={T:2d}°C  (Δn ölçeği {sc:.3f})          "
               f"dogruluk %{a:5.2f}  ({dus:+5.2f} puan)")
-    PHI_SCALE = 1.0
     temp_res.sort(key=lambda x: x["temp_c"])
 
     def noisy_dark_subtract(F_noisy, dc_val):
@@ -1525,13 +1633,11 @@ def env_test(model_or_tuple, n_test=1000, seed=7):
               f"dogruluk %{a:5.2f}  ({a - base:+5.2f} puan)")
 
     print("  " + "─" * 64)
-    PHI_SCALE = haller_scale(30)
     dc = 0.01 * sinyal
     Fk_noise = rng.normal(0.0, np.sqrt(max(dc, 1e-12) * sinyal) * 0.05, F0.shape)
-    Fk_ham = feats() * 1.02 + dc + Fk_noise
+    Fk_ham = feats(haller_scale(30)) * 1.02 + dc + Fk_noise
     a_ham_c = float((head(Fk_ham) == y).mean()) * 100.0
     a_duz_c = float((head(noisy_dark_subtract(Fk_ham, dc)) == y).mean()) * 100.0
-    PHI_SCALE = 1.0
     print("  ✦ KOMBİNE (30°C + %1 sızıntı + %2 drift)")
     print(f"    ham: %{a_ham_c:5.2f} ({a_ham_c - base:+6.2f})   "
           f"karanlık-kare ile: %{a_duz_c:5.2f} ({a_duz_c - base:+5.2f})")
@@ -1599,7 +1705,9 @@ def make_zernike_aberration(n_grid, pv_waves, seed=101):
         span = float(raw_wfe.max() - raw_wfe.min()) + 1e-12
         phi_ab = (raw_wfe - raw_wfe.min()) / span * (2.0 * np.pi * float(pv_waves))
 
-    beam_env = np.exp(-0.15 * (RR ** 2)) if pv_waves > 0.0 else np.ones_like(RR)
+    # Gauss demet zarfı lazerin fiziksel özelliğidir — sapma PV'sinden bağımsız
+    # her koşulda uygulanır (pv=0'da yapay basamak oluşmaz).
+    beam_env = np.exp(-0.15 * (RR ** 2))
     return beam_env * np.exp(1j * phi_ab)
 
 
@@ -1718,32 +1826,49 @@ def _run_zernike_once(mnist_dir, seed=7, n_test=1000):
 
 
 def _run_fashion_once(fmnist_dir, seed=7, n_test=1000):
-    """Tek bir tohum için Fashion-MNIST 8×8 ve 32×32 eşleşmiş kıyası çalıştırır."""
+    """Tek bir tohum için Fashion-MNIST 8×8 ve 32×32 eşleşmiş kıyası çalıştırır.
+    v0.5: tüm lineer satırlar PAT ile eşleşmiş CE-Adam kafa kullanır; rastgele
+    kontrolde eğitim özellikleri gürültülü, değerlendirme özellikleri gürültüsüzdür
+    (PAT ile aynı protokol); 32×32 bölümde N_train=6000 (5280 fit / 720 val)."""
     # 8×8 Düşük Boyutlu Dedektör Kıyaslaması
     X_fa, y_fa, n_fa = load_fashion_mnist(3000, n_test, np.random.default_rng(seed), fmnist_dir)
     n_val8 = 360
     n_fit8 = n_fa - n_val8
+    y_fit8, y_val8 = y_fa[:n_fit8], y_fa[n_fit8:n_fa]
 
-    F_fa_no, _, _ = standardize_split(pool_area(X_fa, 8), n_fa)
-    Wo_fa_no = fit_ridge(F_fa_no[:n_fa], y_fa[:n_fa], 10)
-    fmnist_no_opt_lin = float((predict_ridge(F_fa_no[n_fa:], Wo_fa_no) == y_fa[n_fa:]).mean()) * 100.0
+    F_fa_no = pool_area(X_fa, 8)
+    mu_no, sd_no = fit_standardizer(F_fa_no[:n_fit8])
+    Wo_fa_no = _fit_ce_linear_head(
+        apply_standardizer(F_fa_no[:n_fit8], mu_no, sd_no), y_fit8,
+        apply_standardizer(F_fa_no[n_fit8:n_fa], mu_no, sd_no), y_val8,
+        10, epochs=18, bs=256, lr_head=2.5e-2, rng=np.random.default_rng(seed + 1))
+    fmnist_no_opt_lin = float((predict_ridge(
+        apply_standardizer(F_fa_no[n_fa:], mu_no, sd_no), Wo_fa_no) == y_fa[n_fa:]).mean()) * 100.0
 
+    F_fa_no_s = apply_standardizer(F_fa_no, mu_no, sd_no)
     mlp_fa_no = MLPHead(64, 256, 10, np.random.default_rng(seed + 11))
-    mlp_fa_no.train(F_fa_no[:n_fit8], y_fa[:n_fit8], F_fa_no[n_fit8:n_fa], y_fa[n_fit8:n_fa],
+    mlp_fa_no.train(F_fa_no_s[:n_fit8], y_fit8, F_fa_no_s[n_fit8:n_fa], y_val8,
                     epochs=40, verbose=False)
-    fmnist_no_opt_mlp = float((mlp_fa_no.predict(F_fa_no[n_fa:]) == y_fa[n_fa:]).mean()) * 100.0
+    fmnist_no_opt_mlp = float((mlp_fa_no.predict(F_fa_no_s[n_fa:]) == y_fa[n_fa:]).mean()) * 100.0
 
     twin_fa8 = ZerreTwin(n_grid=128, n_ito=32, cam_n=8, drive_mode="active")
     plant_fa8 = PhysicalPlantSimulator(twin_fa8, seed=seed)
     E_fa8 = plant_fa8.precompute_cells(X_fa, batch_size=256)
     W_r_fa = np.random.default_rng(seed).uniform(1.4, 3.8, (32, 32))
-    F_fa_rnd = plant_fa8.forward_cached(E_fa8, W_r_fa, noisy=True)
-    F_fa_rnd_s, _, _ = standardize_split(F_fa_rnd, n_fa)
-    Wo_fa_rnd = fit_ridge(F_fa_rnd_s[:n_fa], y_fa[:n_fa], 10)
-    fmnist_rnd8_lin = float((predict_ridge(F_fa_rnd_s[n_fa:], Wo_fa_rnd) == y_fa[n_fa:]).mean()) * 100.0
+    # PAT paritesi: ölçekleyici gürültüsüz fit özelliklerinden; kafa gürültülü
+    # eğitim + gürültüsüz val/test özellikleriyle eğitilir.
+    F_fa_rnd_noisy = plant_fa8.forward_cached(E_fa8, W_r_fa, noisy=True)
+    F_fa_rnd_eval  = plant_fa8.forward_cached(E_fa8, W_r_fa, noisy=False)
+    mu_fr, sd_fr = fit_standardizer(F_fa_rnd_eval[:n_fit8])
+    Wo_fa_rnd = _fit_ce_linear_head(
+        apply_standardizer(F_fa_rnd_noisy[:n_fit8], mu_fr, sd_fr), y_fit8,
+        apply_standardizer(F_fa_rnd_eval[n_fit8:n_fa], mu_fr, sd_fr), y_val8,
+        10, epochs=18, bs=256, lr_head=2.5e-2, rng=np.random.default_rng(seed))
+    fmnist_rnd8_lin = float((predict_ridge(
+        apply_standardizer(F_fa_rnd_eval[n_fa:], mu_fr, sd_fr), Wo_fa_rnd) == y_fa[n_fa:]).mean()) * 100.0
 
     W_fa_pat8, mu_fp8, sd_fp8, Wo_fp8, _, _, fwd_fp8 = pat_train(
-        twin_fa8, X_fa[:n_fit8], y_fa[:n_fit8], X_fa[n_fit8:n_fa], y_fa[n_fit8:n_fa],
+        twin_fa8, X_fa[:n_fit8], y_fa[:n_fit8], X_fa[n_fit8:n_fa], y_val8,
         W_r_fa, 10, epochs=18, bs=256, lr_opt=0.10, lr_head=2.5e-2,
         physical_plant=plant_fa8, use_mlp=False, rng=np.random.default_rng(seed), verbose=False
     )
@@ -1752,16 +1877,17 @@ def _run_fashion_once(fmnist_dir, seed=7, n_test=1000):
 
     F_fa_p8_all = apply_standardizer(fwd_fp8(E_fa8[:n_fa], W_fa_pat8, False), mu_fp8, sd_fp8)
     mlp_fa8 = MLPHead(64, 256, 10, np.random.default_rng(seed))
-    mlp_fa8.train(F_fa_p8_all[:n_fit8], y_fa[:n_fit8], F_fa_p8_all[n_fit8:n_fa], y_fa[n_fit8:n_fa],
+    mlp_fa8.train(F_fa_p8_all[:n_fit8], y_fit8, F_fa_p8_all[n_fit8:n_fa], y_val8,
                   epochs=40, verbose=False)
     fmnist_pat8_mlp = float((mlp_fa8.predict(F_fa_p8) == y_fa[n_fa:]).mean()) * 100.0
 
-    # 32×32 Tam Çözünürlüklü Kıyaslama (5000 eğitim, 1000 test)
-    X_ff, y_ff, n_ff = load_fashion_mnist(5000, n_test, np.random.default_rng(seed), fmnist_dir)
-    n_fit32 = 4400
+    # 32×32 Tam Çözünürlüklü Kıyaslama (6000 eğitim, 1000 test; 5280 fit / 720 val)
+    X_ff, y_ff, n_ff = load_fashion_mnist(6000, n_test, np.random.default_rng(seed), fmnist_dir)
+    n_val32 = int(round(0.12 * n_ff))
+    n_fit32 = n_ff - n_val32
 
     F_raw32, _, _ = standardize_split(X_ff.reshape(len(X_ff), -1), n_ff)
-    Wo_raw32 = fit_ridge(F_raw32[:n_ff], y_ff[:n_ff], 10)
+    Wo_raw32, _a_raw = fit_ridge_val(F_raw32[:n_ff], y_ff[:n_ff], 10)
     fmnist_raw32_ridge = float((predict_ridge(F_raw32[n_ff:], Wo_raw32) == y_ff[n_ff:]).mean()) * 100.0
     mlp_raw32 = MLPHead(F_raw32.shape[1], 256, 10, np.random.default_rng(seed + 22))
     mlp_raw32.train(F_raw32[:n_fit32], y_ff[:n_fit32], F_raw32[n_fit32:n_ff], y_ff[n_fit32:n_ff],
@@ -1778,7 +1904,7 @@ def _run_fashion_once(fmnist_dir, seed=7, n_test=1000):
     plant_ff = PhysicalPlantSimulator(twin_ff, seed=seed)
     W_ff_pat, mu_ffp, sd_ffp, _, mlp_ffp, _, fwd_ffp = pat_train(
         twin_ff, X_ff[:n_fit32], y_ff[:n_fit32], X_ff[n_fit32:n_ff], y_ff[n_fit32:n_ff],
-        W_r_fa, 10, epochs=16, bs=256, lr_opt=0.08, lr_head=2.5e-3,
+        W_r_fa, 10, epochs=45, bs=256, lr_opt=0.08, lr_head=2.5e-3,
         physical_plant=plant_ff, use_mlp=True, rng=np.random.default_rng(seed), verbose=False
     )
     E_ff_te = plant_ff.precompute_cells(X_ff[n_ff:], batch_size=256)
@@ -1787,10 +1913,10 @@ def _run_fashion_once(fmnist_dir, seed=7, n_test=1000):
 
     F_ff_clean = twin_ff.forward_batch(X_ff, W_ff_pat, batch_size=256)
     F_ff_cs, mu_ffc, sd_ffc = standardize_split(F_ff_clean, n_ff)
-    Wo_ffc = fit_ridge(F_ff_cs[:n_ff], y_ff[:n_ff], 10)
+    Wo_ffc, _a_ffc = fit_ridge_val(F_ff_cs[:n_ff], y_ff[:n_ff], 10)
     fmnist_32_ridge = float((predict_ridge(F_ff_cs[n_ff:], Wo_ffc) == y_ff[n_ff:]).mean()) * 100.0
     mlp_ffc = MLPHead(F_ff_cs.shape[1], 256, 10, np.random.default_rng(seed))
-    mlp_ffc.train(F_ff_cs[:4500], y_ff[:4500], F_ff_cs[4500:n_ff], y_ff[4500:n_ff],
+    mlp_ffc.train(F_ff_cs[:n_fit32], y_ff[:n_fit32], F_ff_cs[n_fit32:n_ff], y_ff[n_fit32:n_ff],
                   epochs=45, verbose=False)
     fmnist_32_hybrid = float((mlp_ffc.predict(F_ff_cs[n_ff:]) == y_ff[n_ff:]).mean()) * 100.0
 
@@ -1806,6 +1932,66 @@ def _run_fashion_once(fmnist_dir, seed=7, n_test=1000):
         "pat_32x32_ridge": round(fmnist_32_ridge, 2),
         "pat_32x32_perturbed_mlp": round(fmnist_32_imperfect, 2),
         "pat_32x32_nominal_mlp": round(fmnist_32_hybrid, 2),
+        "meta": {"n_train_8x8": int(n_fa), "n_fit8": int(n_fit8), "n_val8": int(n_val8),
+                 "n_train_32x32": int(n_ff), "n_fit32": int(n_fit32), "n_val32": int(n_val32),
+                 "head": "matched_ce_adam", "eval_noisy": False},
+    }
+
+
+def _run_mismatch_once(mnist_dir, seed=7, n_test=1000):
+    """YAPISAL model-uyumsuzluğu testi (v0.5).
+
+    PhysicalPlantSimulator(structural=True) vekilin bilmediği fiziği ekler:
+    pertürbe LC LUT (±%10), CMOS gamma 0.90 ve çarpımsal benek — parametrik
+    sapma değil yapısal farktır; PAT iddiasının anlamlı olabildiği tek rejim budur.
+    Üç eşleşmiş koşul: kalibrasyonsuz ideal ağırlık, donmuş optikte yalnız-kafa
+    CE yeniden eğitimi, vekil-habersiz PAT."""
+    twin_s = ZerreTwin(n_grid=128, n_ito=32, cam_n=8, drive_mode="active")
+    X_s, y_s, n_trs = load_mnist(2200, n_test, np.random.default_rng(seed), mnist_dir)
+    X_trs, y_trs = X_s[:n_trs], y_s[:n_trs]
+    X_tes, y_tes = X_s[n_trs:], y_s[n_trs:]
+
+    W_init_s = np.random.default_rng(seed).uniform(1.4, 3.8, (32, 32))
+    W_ideal_s, mu_id, sd_id, Wout_id, _, _, _ = pat_train(
+        twin_s, X_trs[:1950], y_trs[:1950], X_trs[1950:], y_trs[1950:],
+        W_init_s, 10, epochs=16, bs=256, lr_opt=0.10, lr_head=2.5e-2,
+        physical_plant=None, use_mlp=False, rng=np.random.default_rng(seed), verbose=False
+    )
+
+    sm_plant = PhysicalPlantSimulator(twin_s, seed=seed, structural=True)
+    E_tr_sm = sm_plant.precompute_cells(X_trs)
+    E_te_sm = sm_plant.precompute_cells(X_tes)
+
+    # 1) Kalibrasyonsuz ideal ağırlık + ideal kafa
+    F_te_un = apply_standardizer(sm_plant.forward_cached(E_te_sm, W_ideal_s, noisy=False), mu_id, sd_id)
+    acc_uncomp = float((predict_ridge(F_te_un, Wout_id) == y_tes).mean()) * 100.0
+
+    # 2) Kontrol: donmuş ideal optik + yalnız kafa CE-Adam yeniden eğitimi
+    F_tr_ho = sm_plant.forward_cached(E_tr_sm[:1950], W_ideal_s, noisy=False)
+    F_va_ho = sm_plant.forward_cached(E_tr_sm[1950:], W_ideal_s, noisy=False)
+    mu_ho, sd_ho = fit_standardizer(F_tr_ho)
+    Wout_ho = _fit_ce_linear_head(
+        apply_standardizer(F_tr_ho, mu_ho, sd_ho), y_trs[:1950],
+        apply_standardizer(F_va_ho, mu_ho, sd_ho), y_trs[1950:],
+        10, epochs=16, bs=256, lr_head=2.5e-2, rng=np.random.default_rng(seed)
+    )
+    F_te_ho = apply_standardizer(sm_plant.forward_cached(E_te_sm, W_ideal_s, noisy=False), mu_ho, sd_ho)
+    acc_head_only = float((predict_ridge(F_te_ho, Wout_ho) == y_tes).mean()) * 100.0
+
+    # 3) Vekil-habersiz PAT (optik W + kafa birlikte güncellenir)
+    W_ps, mu_ps, sd_ps, Wout_ps, _, _, _ = pat_train(
+        twin_s, X_trs[:1950], y_trs[:1950], X_trs[1950:], y_trs[1950:],
+        W_init_s, 10, epochs=16, bs=256, lr_opt=0.10, lr_head=2.5e-2,
+        physical_plant=sm_plant, use_mlp=False, rng=np.random.default_rng(seed), verbose=False
+    )
+    F_te_ps = apply_standardizer(sm_plant.forward_cached(E_te_sm, W_ps, noisy=False), mu_ps, sd_ps)
+    acc_pat = float((predict_ridge(F_te_ps, Wout_ps) == y_tes).mean()) * 100.0
+
+    return {
+        "defects": "perturbed LC LUT ±10% + camera gamma 0.90 + speckle + parametric shifts",
+        "uncompensated_acc": round(acc_uncomp, 2),
+        "head_only_acc": round(acc_head_only, 2),
+        "pat_acc": round(acc_pat, 2),
     }
 
 
@@ -1930,6 +2116,15 @@ def run_hardware_realism_suite(base_dir, seed=7):
               f"PAT Kusurlu: %{fm['pat_32x32_perturbed_mlp']:.2f} | PAT Nominal: %{fm['pat_32x32_nominal_mlp']:.2f}", flush=True)
         print(f"  [Süre: {time.time() - t_s:.1f}s]", flush=True)
 
+    # ── 5) YAPISAL MODEL-UYUMSUZLUĞU (v0.5 — vekilin bilmediği fizik) ─────────
+    t_s = time.time()
+    print("\n[TEST 5] Yapısal Model-Uyumsuzluğu (pertürbe LC LUT + gamma + benek, N_test=1000):", flush=True)
+    sm_res = _run_mismatch_once(mnist_dir, seed=seed, n_test=1000)
+    results["structural_mismatch"] = sm_res
+    print(f"  • Kalibrasyonsuz: %{sm_res['uncompensated_acc']:.2f}  |  Yalnız-Kafa: %{sm_res['head_only_acc']:.2f}  |  "
+          f"PAT: %{sm_res['pat_acc']:.2f}", flush=True)
+    print(f"  [Süre: {time.time() - t_s:.1f}s]", flush=True)
+
     out_json = os.path.join(base_dir, "makale", "scripts", "realism_results.json")
     os.makedirs(os.path.dirname(out_json), exist_ok=True)
     with open(out_json, "w", encoding="utf-8") as f:
@@ -1952,16 +2147,27 @@ def _agg_stats(vals):
 
 def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
     """Tüm makale tabloları ve figürleri için birleştirilmiş, sızıntısız ve çoklu-tohumlu
-    kıyaslama paketini çalıştırır; sonuçları makale/scripts/paper_results.json içine yazar."""
+    kıyaslama paketini çalıştırır; sonuçları makale/scripts/paper_results.json içine yazar.
+    v0.5: her bölüm tamamlandıkça paper_results_partial.json'a checkpoint atar;
+    bitiminde eski paper_results.json yedeklenir (paper_results_v04_backup.json)."""
     import scipy
     t_total = time.time()
     seeds = list(seeds)
     mnist_dir = os.path.join(base_dir, "mnist_cache")
     fmnist_dir = os.path.join(base_dir, "fashion_mnist_cache")
     model_path = os.path.join(base_dir, "zerre_model.npz")
+    partial_path = os.path.join(base_dir, "makale", "scripts", "paper_results_partial.json")
+    final_path = os.path.join(base_dir, "makale", "scripts", "paper_results.json")
+
+    out = {}
+    def _ckpt():
+        os.makedirs(os.path.dirname(partial_path), exist_ok=True)
+        with open(partial_path, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2, ensure_ascii=False)
+        print(f"  [CKPT] {os.path.basename(partial_path)} güncellendi ({time.time() - t_total:.0f}s)", flush=True)
 
     print("═" * 82, flush=True)
-    print(f"  ZERRE v0.4 UNIFIED PAPER BENCHMARK · Seeds={seeds}", flush=True)
+    print(f"  ZERRE v0.5 UNIFIED PAPER BENCHMARK · Seeds={seeds}", flush=True)
     print("═" * 82, flush=True)
 
     # 1) Ortam + Alt-Pleshko + Gradyan Doğrulaması
@@ -1990,8 +2196,29 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
         g_fd = g_fd.ravel()
         grad_errs[gm] = float(np.linalg.norm(g_an - g_fd) / (np.linalg.norm(g_fd) + 1e-12))
 
+    out["environment_info"] = {
+        "python": platform.python_version(),
+        "numpy": np.__version__,
+        "scipy": scipy.__version__,
+        "os": platform.platform(),
+        "processor": platform.processor() or "unknown",
+        "seeds": seeds,
+        "benchmark_version": "v0.5",
+    }
+    out["physics_checks"] = {
+        "grad_check_eps": 1e-6,
+        "grad_err_active": float(f"{grad_errs['active']:.4e}"),
+        "grad_err_passive": float(f"{grad_errs['passive']:.4e}"),
+        "alt_pleshko_n16_ratio": round(ap16, 6),
+        "alt_pleshko_n32_ratio": round(ap32, 6),
+        "phase_swing_active_rad": round(float(lc_phase(1.0) - lc_phase(5.0)), 3),
+        "phase_swing_passive_n16_rad": round(float(lc_phase(1.0) - lc_phase(ap16)), 3),
+        "phase_swing_passive_n32_rad": round(float(lc_phase(1.0) - lc_phase(ap32)), 3),
+    }
+    _ckpt()
+
     # 2) Tablo I — Çoklu Tohum 8×8 Sızıntısız Ablasyon (3000 train [2640/360], 1000 test)
-    print("\n[1/6] Tablo I: 8×8 Sızıntısız MNIST Ablasyon (3 tohum)...", flush=True)
+    print("\n[1/6] Tablo I: 8×8 Sızıntısız MNIST Ablasyon (3 tohum, eşleşmiş CE kafa)...", flush=True)
     ab_runs = []
     for s in seeds:
         ab_runs.append(run_ablation(n_train=3000, n_test=1000, cam_n=8, grid=128, seed=s))
@@ -2001,13 +2228,20 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
     for idx in range(len(ab_runs[0]["rows"])):
         r0 = ab_runs[0]["rows"][idx]
         vals = [run["rows"][idx]["acc_pct"] for run in ab_runs]
-        ab_summary.append({
+        row_d = {
             "key": r0["key"],
             "label": r0["label"],
             "opt_w": r0["opt_w"],
             "dig_w": r0["dig_w"],
             **_agg_stats(vals),
-        })
+        }
+        rv = [run["rows"][idx]["acc_ridge_pct"] for run in ab_runs]
+        if rv[0] is not None:
+            row_d["acc_ridge"] = _agg_stats(rv)
+        ab_summary.append(row_d)
+
+    out["table1_ablation"] = {"config": ab_runs[0]["config"], "rows": ab_summary}
+    _ckpt()
 
     # 3) Tablo II — Çoklu Tohum Tam Ölçek 32×32 Hibrit Kıyaslama (6000 train, 1000 test)
     print("\n[2/6] Tablo II: 32×32 Tam Ölçek MNIST Kıyaslama (3 tohum)...", flush=True)
@@ -2019,9 +2253,10 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
         ("opt_32_1024f_ridge_6000", "32×32 Aktif (Rastgele) + 32×32 Ridge (N=6000)", 1024, 10250),
         ("opt_32_random_mlp_6000", "32×32 Aktif (Rastgele) + 32×32 MLP (N=6000)", 1024, 264970),
         ("opt_32_pat_perturbed_mlp_6000", "32×32 Aktif + PAT + MLP (Kusurlu Sistem)", 1024, 264970),
-        ("opt_32_pat_nominal_mlp_6000", "32×32 Aktif + PAT + MLP (Kalibre İkiz)", 1024, 264970),
+        ("opt_32_pat_nominal_mlp_6000", "32×32 Aktif + PAT + MLP (Nominal İkiz — Üst Sınır)", 1024, 264970),
     ]
     t2_per_seed = {k: [] for k, _, _, _ in t2_keys}
+    t2_alphas = {}
     perturbed_seed7_tuple = None
 
     for s in seeds:
@@ -2038,8 +2273,9 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
         mu_r, sd_r = fit_standardizer(X_flat_tr)
         Xr_tr = apply_standardizer(X_flat_tr, mu_r, sd_r)
         Xr_te = apply_standardizer(X_flat_te, mu_r, sd_r)
-        Wo_raw = fit_ridge(Xr_tr, y_tr_m, 10)
+        Wo_raw, a_raw = fit_ridge_val(Xr_tr, y_tr_m, 10)
         t2_per_seed["raw_28x28_ridge"].append(float((predict_ridge(Xr_te, Wo_raw) == y_te_m).mean()) * 100.0)
+        t2_alphas.setdefault("raw_28x28_ridge", []).append(a_raw)
 
         mlp_raw = MLPHead(Xr_tr.shape[1], 256, 10, np.random.default_rng(s + 1))
         mlp_raw.train(Xr_tr[:n_fit_m], y_tr_m[:n_fit_m], Xr_tr[n_fit_m:], y_tr_m[n_fit_m:],
@@ -2052,19 +2288,21 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
         F_16_tr = tw_16_16.forward_batch(X_tr_m[:2500], W_r16, batch_size=256)
         F_16_te = tw_16_16.forward_batch(X_te_m, W_r16, batch_size=256)
         mu_16, sd_16 = fit_standardizer(F_16_tr)
-        W_16 = fit_ridge(apply_standardizer(F_16_tr, mu_16, sd_16), y_tr_m[:2500], 10)
+        W_16, a_16 = fit_ridge_val(apply_standardizer(F_16_tr, mu_16, sd_16), y_tr_m[:2500], 10)
         t2_per_seed["opt_16_256f_ridge_2500"].append(
             float((predict_ridge(apply_standardizer(F_16_te, mu_16, sd_16), W_16) == y_te_m).mean()) * 100.0
         )
+        t2_alphas.setdefault("opt_16_256f_ridge_2500", []).append(a_16)
 
         tw_16_32 = ZerreTwin(128, n_ito=16, cam_n=32, drive_mode="active")
         F_1632_tr = tw_16_32.forward_batch(X_tr_m[:2500], W_r16, batch_size=256)
         F_1632_te = tw_16_32.forward_batch(X_te_m, W_r16, batch_size=256)
         mu_1632, sd_1632 = fit_standardizer(F_1632_tr)
-        W_1632 = fit_ridge(apply_standardizer(F_1632_tr, mu_1632, sd_1632), y_tr_m[:2500], 10)
+        W_1632, a_1632 = fit_ridge_val(apply_standardizer(F_1632_tr, mu_1632, sd_1632), y_tr_m[:2500], 10)
         t2_per_seed["opt_16_1024f_ridge_2500"].append(
             float((predict_ridge(apply_standardizer(F_1632_te, mu_1632, sd_1632), W_1632) == y_te_m).mean()) * 100.0
         )
+        t2_alphas.setdefault("opt_16_1024f_ridge_2500", []).append(a_1632)
 
         # 5-8) N_train=6000 (32×32 optik + 32×32 okuma)
         tw_32 = ZerreTwin(128, n_ito=32, cam_n=32, drive_mode="active")
@@ -2074,8 +2312,9 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
         mu_32r, sd_32r = fit_standardizer(F_32r_tr)
         Fr_tr_s = apply_standardizer(F_32r_tr, mu_32r, sd_32r)
         Fr_te_s = apply_standardizer(F_32r_te, mu_32r, sd_32r)
-        Wo_32r = fit_ridge(Fr_tr_s, y_tr_m, 10)
+        Wo_32r, a_32r = fit_ridge_val(Fr_tr_s, y_tr_m, 10)
         t2_per_seed["opt_32_1024f_ridge_6000"].append(float((predict_ridge(Fr_te_s, Wo_32r) == y_te_m).mean()) * 100.0)
+        t2_alphas.setdefault("opt_32_1024f_ridge_6000", []).append(a_32r)
 
         mlp_32r = MLPHead(Fr_tr_s.shape[1], 256, 10, np.random.default_rng(s + 2))
         mlp_32r.train(Fr_tr_s[:n_fit_m], y_tr_m[:n_fit_m], Fr_tr_s[n_fit_m:], y_tr_m[n_fit_m:],
@@ -2087,7 +2326,7 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
             tw_32,
             X_tr_m[:n_fit_m], y_tr_m[:n_fit_m],
             X_tr_m[n_fit_m:], y_tr_m[n_fit_m:],
-            W_r32, 10, epochs=18, bs=256,
+            W_r32, 10, epochs=45, bs=256,
             lr_opt=0.09, lr_head=2.5e-3,
             physical_plant=plant_32, use_mlp=True,
             rng=np.random.default_rng(s + 3), verbose=False
@@ -2097,13 +2336,13 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
         acc_phy = float((mlp_p32.predict(F_te_phy) == y_te_m).mean()) * 100.0
         t2_per_seed["opt_32_pat_perturbed_mlp_6000"].append(acc_phy)
 
-        # Kalibre nominal ikiz üzerinde kafa uyumu
+        # Nominal (ideal) ikiz üzerinde kafa uyumu — üst sınır, donanım kalibrasyonu değil
         F_cl_tr = tw_32.forward_batch(X_tr_m, W_pat_32, batch_size=256)
         F_cl_te = tw_32.forward_batch(X_te_m, W_pat_32, batch_size=256)
         mu_c32, sd_c32 = fit_standardizer(F_cl_tr)
         Fc_tr_s = apply_standardizer(F_cl_tr, mu_c32, sd_c32)
         Fc_te_s = apply_standardizer(F_cl_te, mu_c32, sd_c32)
-        Wo_c32 = fit_ridge(Fc_tr_s, y_tr_m, 10)
+        Wo_c32, _a_c32 = fit_ridge_val(Fc_tr_s, y_tr_m, 10)
         mlp_c32 = MLPHead(Fc_tr_s.shape[1], 256, 10, np.random.default_rng(s + 4))
         mlp_c32.train(Fc_tr_s[:n_fit_m], y_tr_m[:n_fit_m], Fc_tr_s[n_fit_m:], y_tr_m[n_fit_m:],
                       epochs=45, verbose=False)
@@ -2120,7 +2359,7 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
                 "drive_mode": "active", "n_train": n_tr_m, "n_test": 1000,
                 "pat_perturbed_acc": round(acc_phy, 2),
                 "pat_nominal_acc": round(acc_nom, 2),
-                "version": "v0.4",
+                "version": "v0.5",
             }
             save_model(model_path, W_pat_32, mu_c32, sd_c32, Wo_c32, mlp_c32,
                        128, 32, 10, n_ito=32, drive_mode="active", metadata=meta_npz)
@@ -2137,7 +2376,17 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
 
     t2_summary = []
     for k, lbl, ow, dw in t2_keys:
-        t2_summary.append({"key": k, "label": lbl, "opt_w": ow, "dig_w": dw, **_agg_stats(t2_per_seed[k])})
+        row_d = {"key": k, "label": lbl, "opt_w": ow, "dig_w": dw, **_agg_stats(t2_per_seed[k])}
+        if k in t2_alphas:
+            row_d["ridge_alpha"] = t2_alphas[k]
+        t2_summary.append(row_d)
+
+    out["table2_scaling"] = {
+        "config": {"n_train": 6000, "n_fit": 5280, "n_val": 720, "n_test": 1000, "grid": 128,
+                   "seeds": seeds, "pat_mlp_epochs": 45, "head_mlp_epochs": 45},
+        "rows": t2_summary,
+    }
+    _ckpt()
 
     # 4) CPU Çıkarım Süresi (50 çalışma medyan/IQR)
     print("\n[3/6] CPU Simülasyon Süresi & Şekil 4 (Dayanım + Çevre, N_test=1000)...", flush=True)
@@ -2185,52 +2434,45 @@ def run_paper_benchmark(base_dir, seeds=(7, 19, 42)):
     for s in seeds[1:]:
         fm_runs.append(_run_fashion_once(fmnist_dir, seed=s, n_test=1000))
         gc.collect()
-    fm_summary = {k: _agg_stats([r[k] for r in fm_runs]) for k in fm_runs[0].keys()}
+    fm_keys = [k for k in fm_runs[0].keys() if k != "meta"]
+    fm_summary = {k: _agg_stats([r[k] for r in fm_runs]) for k in fm_keys}
+    fm_summary["meta"] = fm_runs[0]["meta"]
 
-    out = {
-        "environment_info": {
-            "python": platform.python_version(),
-            "numpy": np.__version__,
-            "scipy": scipy.__version__,
-            "os": platform.platform(),
-            "processor": platform.processor() or "unknown",
-            "seeds": seeds,
-            "total_runtime_s": round(time.time() - t_total, 1),
-        },
-        "physics_checks": {
-            "grad_check_eps": 1e-6,
-            "grad_err_active": float(f"{grad_errs['active']:.4e}"),
-            "grad_err_passive": float(f"{grad_errs['passive']:.4e}"),
-            "alt_pleshko_n16_ratio": round(ap16, 6),
-            "alt_pleshko_n32_ratio": round(ap32, 6),
-            "phase_swing_active_rad": round(float(lc_phase(1.0) - lc_phase(5.0)), 3),
-            "phase_swing_passive_n16_rad": round(float(lc_phase(1.0) - lc_phase(ap16)), 3),
-            "phase_swing_passive_n32_rad": round(float(lc_phase(1.0) - lc_phase(ap32)), 3),
-        },
-        "table1_ablation": {
-            "config": ab_runs[0]["config"],
-            "rows": ab_summary,
-        },
-        "table2_scaling": {
-            "config": {"n_train": 6000, "n_fit": 5280, "n_val": 720, "n_test": 1000, "grid": 128, "seeds": seeds},
-            "rows": t2_summary,
-        },
-        "latency_cpu": latency_info,
-        "robustness": rob_res,
-        "robustness_perturbed_head": rob_phy_res,
-        "environment_tests": env_res,
-        "quantization": realism_seed0["quantization"],
-        "black_matrix": realism_seed0["black_matrix"],
-        "zernike_multiseed": z_summary,
-        "fashion_mnist_multiseed": fm_summary,
+    sm_runs = [realism_seed0["structural_mismatch"]]
+    for s in seeds[1:]:
+        sm_runs.append(_run_mismatch_once(mnist_dir, seed=s, n_test=1000))
+        gc.collect()
+    sm_summary = {
+        "defects": sm_runs[0]["defects"],
+        "uncompensated": _agg_stats([r["uncompensated_acc"] for r in sm_runs]),
+        "head_only": _agg_stats([r["head_only_acc"] for r in sm_runs]),
+        "pat": _agg_stats([r["pat_acc"] for r in sm_runs]),
     }
 
-    out_path = os.path.join(base_dir, "makale", "scripts", "paper_results.json")
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
+    out["environment_info"]["total_runtime_s"] = round(time.time() - t_total, 1)
+    out["latency_cpu"] = latency_info
+    out["robustness"] = rob_res
+    out["robustness_perturbed_head"] = rob_phy_res
+    out["environment_tests"] = env_res
+    out["quantization"] = realism_seed0["quantization"]
+    out["black_matrix"] = realism_seed0["black_matrix"]
+    out["zernike_multiseed"] = z_summary
+    out["fashion_mnist_multiseed"] = fm_summary
+    out["structural_mismatch"] = sm_summary
+
+    if os.path.exists(final_path):
+        bak = final_path.replace("paper_results.json", "paper_results_v04_backup.json")
+        try:
+            os.replace(final_path, bak)
+            print(f"  [YEDEK] Eski sonuçlar: {os.path.basename(bak)}", flush=True)
+        except OSError:
+            pass
+    with open(final_path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2, ensure_ascii=False)
+    if os.path.exists(partial_path):
+        os.remove(partial_path)
     print("═" * 82, flush=True)
-    print(f"  [TAMAM] Tüm birleşik makale sonuçları kaydedildi: {out_path} ({out['environment_info']['total_runtime_s']}s)", flush=True)
+    print(f"  [TAMAM] Tüm birleşik makale sonuçları kaydedildi: {final_path} ({out['environment_info']['total_runtime_s']}s)", flush=True)
     print("═" * 82, flush=True)
     return out
 

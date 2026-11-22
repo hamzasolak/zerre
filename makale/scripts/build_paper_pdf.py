@@ -173,7 +173,7 @@ def _make_doc(out_path, top_fig_h_mm=63.0):
         canvas.drawCentredString(pw / 2.0, 7.5 * mm, f"{doc.page}")
         canvas.restoreState()
 
-    head_h = 80.0 * mm
+    head_h = 85.5 * mm
     body1_h = usable_h - head_h - 2.5 * mm
     f_head = Frame(margin_x, margin_y + body1_h + 2.5 * mm, full_w, head_h, id="F_HEAD", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
     f1_l = Frame(margin_x, margin_y, col_w, body1_h, id="F1_L", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
@@ -185,12 +185,19 @@ def _make_doc(out_path, top_fig_h_mm=63.0):
     ff_l = Frame(margin_x, margin_y, col_w, bot_h, id="FF_L", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
     ff_r = Frame(margin_x + col_w + gap, margin_y, col_w, bot_h, id="FF_R", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
 
+    top_h_last = 56.0 * mm
+    bot_h_last = usable_h - top_h_last - 2.5 * mm
+    ft_top_last = Frame(margin_x, margin_y + bot_h_last + 2.5 * mm, full_w, top_h_last, id="FT_TOP_LAST", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    ff_l_last = Frame(margin_x, margin_y, col_w, bot_h_last, id="FF_L_LAST", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    ff_r_last = Frame(margin_x + col_w + gap, margin_y, col_w, bot_h_last, id="FF_R_LAST", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+
     c_l = Frame(margin_x, margin_y, col_w, usable_h, id="C_L", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
     c_r = Frame(margin_x + col_w + gap, margin_y, col_w, usable_h, id="C_R", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
 
     doc = BaseDocTemplate(out_path, pagesize=A4, pageTemplates=[
         PageTemplate(id="P_FIRST", frames=[f_head, f1_l, f1_r], onPage=on_page),
         PageTemplate(id="P_TOPFIG", frames=[ft_top, ff_l, ff_r], onPage=on_page),
+        PageTemplate(id="P_TOPFIG_LAST", frames=[ft_top_last, ff_l_last, ff_r_last], onPage=on_page),
         PageTemplate(id="P_TWOCOL", frames=[c_l, c_r], onPage=on_page),
     ])
     return doc, full_w, col_w
@@ -240,40 +247,42 @@ def build_pdf(lang, out_path, base_dir, st):
         title_txt = "ZERRE (Model H): Wave-Optics Design, Physical Synthesis, and Physics-Aware Training of a Common-Path Optoelectronic Processor"
         affil_txt = "Independent Researcher, Türkiye &nbsp;|&nbsp; eng.hamzasolak@gmail.com &nbsp;|&nbsp; ORCID: 0009-0004-7541-9620"
         abs_txt = (
-            "<i>Abstract:</i> Programmable optical neural processors often rely on expensive spatial light modulators and dual-arm "
-            "interferometers that suffer from sub-wavelength vibration sensitivity. This numerical design and wave-optics simulation "
-            "study presents ZERRE (Model H), an open-source common-path optoelectronic architecture built around commodity monochrome "
-            "masked stereolithography (mSLA) liquid-crystal displays. Guided by measured nematic scattering attenuation, volumetric nematic reservoirs "
-            "were rejected due to thermal Rayleigh–Gans scattering (15 to 40 dB/cm), and passive-matrix ITO addressing was shown via "
-            "the Alt–Pleshko bound to compress usable E7 phase retardation from 4.86 rad (1.00–5.00 V) to 0.921 rad for 16 rows. An analytical "
-            "Wirtinger-adjoint backpropagation operator through scalar Angular Spectrum propagation and coupled Jones modulation "
-            "(relative finite-difference error 5.52×10<sup>−7</sup>) enables Physics-Aware Training (PAT) against unmodeled hardware "
-            "perturbations. Across three random seeds (<i>N</i><sub>test</sub> = 1000) in an 8×8 detector-bottlenecked regime, PAT "
-            "improves linear MNIST accuracy from 67.77% to 77.57% (+9.80 percentage points over matched random optics) while "
-            "remaining 3.70 points below direct digital area pooling (81.27%). With a 32×32 readout grid and hybrid multilayer "
-            "perceptron, calibrated accuracy reaches 94.37% on MNIST and 84.20% on Fashion-MNIST, matching raw-pixel (93.93%, 84.47%) "
-            "and random-optics (94.20%, 83.97%) MLPs; blind PAT attains 77.30% under 15-wavelength Zernike aberrations (+0.63 points "
-            "over 76.67% head-only recalibration) and retains 94.9% under 4-bit quantization within an estimated $784–$959 budget."
+            "<i>Abstract:</i> Programmable optical neural processors typically rely on expensive spatial light modulators and vibration-sensitive "
+            "dual-arm interferometers. This numerical design and wave-optics simulation study presents ZERRE (Model H), an open-source "
+            "common-path optoelectronic architecture built around commodity monochrome masked stereolithography (mSLA) liquid-crystal displays. "
+            "Based on measured nematic attenuation, volumetric reservoirs were rejected due to thermal Rayleigh–Gans scattering (15–40 dB/cm), "
+            "and passive-matrix ITO addressing was shown via the Alt–Pleshko bound to compress usable E7 phase retardation from 4.86 rad "
+            "(1.00–5.00 V) to 0.921 rad across 16 rows. An analytical Wirtinger-adjoint operator through scalar Angular Spectrum propagation "
+            "and coupled Jones modulation (relative finite-difference error 5.52×10<sup>−7</sup>) enables Physics-Aware Training (PAT) under "
+            "unmodeled hardware perturbations. Across three random seeds (<i>N</i><sub>test</sub> = 1000) in an 8×8 detector-bottlenecked regime "
+            "with every readout head matched to an identical cross-entropy/Adam protocol, PAT lifts linear MNIST accuracy from 71.07% to 78.40% "
+            "(+7.33 points over matched random optics) yet trails direct digital area pooling (87.00%) by 8.60 points. With a 32×32 readout grid "
+            "and hybrid multilayer perceptron, the nominal-twin upper bound reaches 94.67% on MNIST and 84.43% on Fashion-MNIST (perturbed "
+            "plant: 91.07%, 81.47%), matching raw-pixel (93.93%, 85.17%) and random-optics (94.20%, 84.70%) MLPs. Blind PAT reaches 77.30% under "
+            "15-wavelength Zernike aberrations (+0.63 points over 76.67% head-only recalibration, within one combined SD) and retains 94.8% at "
+            "4-bit quantization, but trails head-only recalibration (76.80% vs. 79.13%) under structural model mismatch (perturbed LC curve, "
+            "camera gamma, speckle). Estimated component cost is $784–$959."
         )
         kw_txt = "<i>Index Terms:</i> Angular spectrum method, diffractive neural networks, liquid-crystal modulators, optoelectronic computing, physics-aware training, Wirtinger adjoint."
     else:
         title_txt = "ZERRE (Model H): Ortak-Yol Kırınımlı Optoelektronik İşlemcinin Dalga-Optiği Tasarımı, Fiziksel Sentezi ve Fizik-Farkındalıklı Eğitimi"
         affil_txt = "Bağımsız Araştırmacı, Türkiye &nbsp;|&nbsp; eng.hamzasolak@gmail.com &nbsp;|&nbsp; ORCID: 0009-0004-7541-9620"
         abs_txt = (
-            "<i>Özet:</i> Programlanabilir optik sinir ağı işlemcileri çoğunlukla yüksek maliyetli uzamsal ışık modülatörlerine "
-            "ve dalga boyu altı titreşimlere hassas çift kollu interferometrelere dayanmaktadır. Bu sayısal tasarım ve dalga-optiği "
-            "simülasyon çalışmasında, yaygın monokrom maskeli stereolitografi (mSLA) sıvı kristal ekranları temel alan açık "
-            "kaynaklı ortak-yol optoelektronik ZERRE (Model H) mimarisi sunulmaktadır. Ölçülmüş nematik saçılma zayıflaması doğrultusunda "
-            "hacimsel nematik rezervuarlar termal Rayleigh–Gans saçılması (15–40 dB/cm) nedeniyle elenmiş; pasif matrisli ITO "
-            "sürüşünün ise Alt–Pleshko sınırı uyarınca 16 satırlı bir dizide E7 faz aralığını 4,86 rad'dan (1,00–5,00 V) 0,921 rad'a daralttığı "
-            "gösterilmiştir. Skaler Açısal Spektrum yayılımı ve kuple Jones modülasyonu için türetilen kapalı form Wirtinger eşlenik "
-            "geri yayılımı (sonlu farklarla bağıl hata 5,52×10<sup>−7</sup>), modellenmemiş donanım kusurlarına karşı "
-            "Fizik-Farkındalıklı Eğitimi (PAT) mümkün kılmaktadır. Üç farklı tohumda (<i>N</i><sub>test</sub> = 1000) kısıtlı 8×8 "
-            "dedektör rejiminde PAT, lineer MNIST doğruluğunu eşleşmiş rastgele optiğe göre %67,77'den %77,57'ye (+9,80 puan) "
-            "yükseltirken doğrudan dijital alan havuzlamanın (%81,27) 3,70 puan gerisinde kalmaktadır. Tam 32×32 okuma ve hibrit "
-            "çok katmanlı algılayıcıyla kalibre doğruluk MNIST'te %94,37'ye ve Fashion-MNIST'te %84,20'ye ulaşarak ham piksel (%93,93, %84,47) "
-            "ve rastgele optik (%94,20, %83,97) MLP'lerle eşdeğer kalmakta; 15 dalga boyu Zernike sapmasında kör PAT %77,30'a ulaşmakta "
-            "(yalnız-kafa kalibrasyonunun [%76,67] +0,63 puan üzerinde) ve 4-bit basamaklamada %94,9'u korumaktadır. Bütçe 784–959 USD'dir."
+            "<i>Özet:</i> Programlanabilir optik sinir ağı işlemcileri çoğunlukla pahalı uzamsal ışık modülatörlerine ve titreşime duyarlı "
+            "çift kollu interferometrelere dayanır. Bu sayısal tasarım ve dalga-optiği simülasyon çalışması, yaygın monokrom maskeli "
+            "stereolitografi (mSLA) sıvı kristal ekranları temel alan açık kaynaklı ortak-yol optoelektronik ZERRE (Model H) mimarisini "
+            "sunmaktadır. Ölçülmüş nematik zayıflama temelinde hacimsel rezervuarlar termal Rayleigh–Gans saçılması (15–40 dB/cm) nedeniyle "
+            "elenmiş; pasif matrisli ITO sürüşünün ise Alt–Pleshko sınırı uyarınca 16 satırda kullanılabilir E7 faz aralığını 4,86 rad'dan "
+            "(1,00–5,00 V) 0,921 rad'a daralttığı gösterilmiştir. Skaler Açısal Spektrum yayılımı ve kuple Jones modülasyonu için türetilen "
+            "kapalı form Wirtinger eşlenik operatörü (sonlu farklarla bağıl hata 5,52×10<sup>−7</sup>), modellenmemiş donanım kusurlarına "
+            "karşı Fizik-Farkındalıklı Eğitimi (PAT) mümkün kılar. Üç tohumda (<i>N</i><sub>test</sub> = 1000) tüm okuma kafalarının aynı "
+            "çapraz-entropi/Adam protokolüyle eşlendiği kısıtlı 8×8 dedektör rejiminde PAT, lineer MNIST doğruluğunu eşleşmiş rastgele "
+            "optiğe göre %71,07'den %78,40'a (+7,33 puan) çıkarırken doğrudan dijital alan havuzlamanın (%87,00) 8,60 puan gerisinde kalır. "
+            "Tam 32×32 okuma ve hibrit çok katmanlı algılayıcıyla nominal-ikiz üst sınırı MNIST'te %94,67 ve Fashion-MNIST'te %84,43'e "
+            "ulaşırken (kusurlu sistem: %91,07, %81,47), bu değerler ham piksel (%93,93, %85,17) ve rastgele optik (%94,20, %84,70) "
+            "MLP'leriyle eşdeğerdir. 15 dalga boyu Zernike sapmasında kör PAT %77,30'a ulaşır (yalnız-kafa %76,67; +0,63 puan birleşik SS "
+            "içinde) ve 4-bit basamaklamada %94,8'i korur; ancak pertürbe LC eğrisi, kamera gamması ve benek içeren yapısal uyumsuzlukta "
+            "yalnız-kafa kalibrasyonunun gerisinde kalır (%76,80 ve %79,13). Tahmini bileşen bütçesi 784–959 USD'dir."
         )
         kw_txt = "<i>Anahtar Kelimeler:</i> Açısal spektrum yöntemi, kırınımlı sinir ağları, sıvı kristal modülatörler, optoelektronik hesaplama, fizik-farkındalıklı eğitim, Wirtinger eşlenik."
 
@@ -434,12 +443,12 @@ def build_pdf(lang, out_path, base_dir, st):
         "<b>Fig. 1.</b> Scalar wave-optics forward propagation of a handwritten MNIST digit ('8') through the simulated ZERRE Model H "
         "pipeline (<i>N</i> = 128², Δ<i>x</i> = 47 μm): <b>(a)</b> input amplitude mask <i>A</i>(<i>x,y</i>); <b>(b)</b> diffracted amplitude "
         "|<i>E</i><sub>1</sub>| after <i>Z</i><sub>1</sub> = 5 cm ASM propagation; <b>(c)</b> PAT-trained 32×32 active LC phase map Δφ(<i>V<sub>ij</sub></i>) [rad]; "
-        "<b>(d)</b> CMOS intensity |<i>E</i><sub>2</sub>|² after <i>Z</i><sub>2</sub> = 5 cm; <b>(e)</b> 32×32 pooled map (Class 8 at 94.4%, 0.78 ms median CPU sim)."
+        "<b>(d)</b> CMOS intensity |<i>E</i><sub>2</sub>|² after <i>Z</i><sub>2</sub> = 5 cm; <b>(e)</b> 32×32 pooled map (Class 8 at 94.7%, 1.04 ms median CPU sim)."
         if lang == "en" else
         "<b>Şekil 1.</b> ZERRE Model H dalga-optiği hattında el yazısı bir MNIST rakamının ('8') skaler ileri yayılımı "
         "(<i>N</i> = 128², Δ<i>x</i> = 47 μm): <b>(a)</b> giriş genlik maskesi <i>A</i>(<i>x,y</i>); <b>(b)</b> <i>Z</i><sub>1</sub> = 5 cm ASM sonrası "
         "|<i>E</i><sub>1</sub>| genliği; <b>(c)</b> PAT ile eğitilmiş 32×32 aktif LC faz haritası Δφ(<i>V<sub>ij</sub></i>) [rad]; <b>(d)</b> <i>Z</i><sub>2</sub> = 5 cm "
-        "sonrası CMOS yoğunluğu |<i>E</i><sub>2</sub>|²; <b>(e)</b> 32×32 havuzlanmış harita (%94,4 ile Sınıf 8, ortanca 0,78 ms CPU sim)."
+        "sonrası CMOS yoğunluğu |<i>E</i><sub>2</sub>|²; <b>(e)</b> 32×32 havuzlanmış harita (%94,7 ile Sınıf 8, ortanca 1,04 ms CPU sim)."
     )
     story.append(fig_block(os.path.join(fig_dir, f"makale_fig1_dalga_{lang}.png"), fig1_cap, st, 180, max_img_h_mm=43.0))
     story.append(NextPageTemplate("P_TWOCOL"))
@@ -690,7 +699,7 @@ def build_pdf(lang, out_path, base_dir, st):
     story.append(PageBreak())
     fig3_cap = (
         "<b>Fig. 3.</b> <b>(a)</b> 3-seed MNIST test accuracy (mean ± 1 SD, <i>N</i><sub>test</sub> = 1000) across 11 matched configurations "
-        "(8×8 detector, perturbed plant): PAT 32×32 linear (+9.80 pts over random) vs. digital area pooling (81.27%). "
+        "(8×8 detector, perturbed plant): PAT 32×32 linear (+7.33 pts over random) vs. digital area pooling (87.00%). "
         "<b>(b)</b> Analytical Wirtinger adjoint vs. central finite differences (ε = 10<sup>−6</sup>)."
         if lang == "en" else
         "<b>Şekil 3.</b> <b>(a)</b> Kusurlu sistemde 8×8 dedektörde 11 eşleşmiş yapılandırmada 3 tohumlu MNIST doğruluğu "
@@ -703,17 +712,17 @@ def build_pdf(lang, out_path, base_dir, st):
     if lang == "en":
         t2_rows = [
             [Paragraph("<b>#</b>", st["cell_b"]), Paragraph("<b>Architecture</b>", st["cell_b"]), Paragraph("<b>Opt.W</b>", st["cell_br"]), Paragraph("<b>Dig.W</b>", st["cell_br"]), Paragraph("<b>Test (%)</b>", st["cell_br"])],
-            [Paragraph("1", st["cell"]), Paragraph("Digital Area (8×8) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("81.27±0.55", st["cell_r"])],
-            [Paragraph("2", st["cell"]), Paragraph("Digital PCA (64) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650ᵃ", st["cell_r"]), Paragraph("83.97±1.29", st["cell_r"])],
-            [Paragraph("3", st["cell"]), Paragraph("Free-Space (No LC)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("68.57±0.95", st["cell_r"])],
-            [Paragraph("4", st["cell"]), Paragraph("Passive 16×16 Rand.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("69.00±0.40", st["cell_r"])],
-            [Paragraph("5", st["cell"]), Paragraph("Active 16×16 Rand.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("67.43±0.85", st["cell_r"])],
-            [Paragraph("6", st["cell"]), Paragraph("Active 32×32 Rand.", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("67.77±0.40", st["cell_r"])],
-            [Paragraph("7", st["cell"]), Paragraph("Passive 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("73.53±2.04", st["cell_r"])],
-            [Paragraph("8", st["cell"]), Paragraph("Active 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("74.13±0.75", st["cell_r"])],
-            [Paragraph("<b>9</b>", st["cell_b"]), Paragraph("<b>Active 32×32 PAT Lin.</b>", st["cell_b"]), Paragraph("<b>1,024</b>", st["cell_br"]), Paragraph("<b>650</b>", st["cell_br"]), Paragraph("<b>77.57±2.22</b>", st["cell_br"])],
+            [Paragraph("1", st["cell"]), Paragraph("Digital Area (8×8) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("87.00±1.47", st["cell_r"])],
+            [Paragraph("2", st["cell"]), Paragraph("Digital PCA (64) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650ᵃ", st["cell_r"]), Paragraph("87.73±1.23", st["cell_r"])],
+            [Paragraph("3", st["cell"]), Paragraph("Free-Space (No LC)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("75.53±1.63", st["cell_r"])],
+            [Paragraph("4", st["cell"]), Paragraph("Passive 16×16 Rand.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("70.93±1.39", st["cell_r"])],
+            [Paragraph("5", st["cell"]), Paragraph("Active 16×16 Rand.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("70.47±2.51", st["cell_r"])],
+            [Paragraph("6", st["cell"]), Paragraph("Active 32×32 Rand.", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("71.07±1.55", st["cell_r"])],
+            [Paragraph("7", st["cell"]), Paragraph("Passive 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("72.43±2.93", st["cell_r"])],
+            [Paragraph("8", st["cell"]), Paragraph("Active 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("74.10±2.08", st["cell_r"])],
+            [Paragraph("<b>9</b>", st["cell_b"]), Paragraph("<b>Active 32×32 PAT Lin.</b>", st["cell_b"]), Paragraph("<b>1,024</b>", st["cell_br"]), Paragraph("<b>650</b>", st["cell_br"]), Paragraph("<b>78.40±2.31</b>", st["cell_br"])],
             [Paragraph("10", st["cell"]), Paragraph("Digital Area + MLP", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("19,210", st["cell_r"]), Paragraph("91.60±1.25", st["cell_r"])],
-            [Paragraph("<b>11</b>", st["cell_b"]), Paragraph("<b>Active 32×32 PAT MLP</b>", st["cell_b"]), Paragraph("<b>1,024</b>", st["cell_br"]), Paragraph("<b>19,210</b>", st["cell_br"]), Paragraph("<b>84.53±1.47</b>", st["cell_br"])],
+            [Paragraph("<b>11</b>", st["cell_b"]), Paragraph("<b>Active 32×32 PAT MLP</b>", st["cell_b"]), Paragraph("<b>1,024</b>", st["cell_br"]), Paragraph("<b>19,210</b>", st["cell_br"]), Paragraph("<b>86.13±0.74</b>", st["cell_br"])],
         ]
         story.append(KeepTogether([
             Paragraph("TABLE II — CONTROLLED MNIST ABLATION (8×8, 3 SEEDS)", st["tab_cap"]),
@@ -721,23 +730,23 @@ def build_pdf(lang, out_path, base_dir, st):
             Paragraph("ᵃExcludes 784×64 training-only PCA basis matrix.", st["tab_note"]),
         ]))
         story.append(Paragraph(
-            "PAT raises 32×32 linear accuracy by +9.80 points over matched random optics (67.77% → 77.57%), whereas passive (73.53±2.04%) and active (74.13±0.75%) "
+            "PAT raises 32×32 linear accuracy by +7.33 points over matched random optics (71.07% → 78.40%), whereas passive (72.43±2.93%) and active (74.10±2.08%) "
             "16×16 PAT are statistically equivalent within 1 SD on rank-bottlenecked 8×8 readout. Single-layer positive intensity optics trails digital 8×8 area pooling "
-            "(81.27%), unconstrained PCA-64 linear ceiling (83.97±1.29%), and digital area MLP (91.60% vs. 84.53%).",
+            "(87.00%), unconstrained PCA-64 linear ceiling (87.73±1.23%), and digital area MLP (91.60% vs. 86.13%).",
             st["body"]
         ))
         story.append(Paragraph("B. Full-Scale 32×32 Hybrid Classification on MNIST and Fashion-MNIST", st["h3"]))
         t3_rows = [
             [Paragraph("<b>Configuration</b>", st["cell_b"]), Paragraph("<b>Opt.W</b>", st["cell_br"]), Paragraph("<b>Dig.W</b>", st["cell_br"]), Paragraph("<b>MNIST</b>", st["cell_br"]), Paragraph("<b>F-MNIST</b>", st["cell_br"])],
-            [Paragraph("Raw 28×28 Ridge (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("7,850", st["cell_r"]), Paragraph("82.93±1.70", st["cell_r"]), Paragraph("79.07±0.81", st["cell_r"])],
-            [Paragraph("Opt 16×16 256f Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("2,570", st["cell_r"]), Paragraph("81.73±0.72", st["cell_r"]), Paragraph("—", st["cell_r"])],
-            [Paragraph("Opt 16×16 1024f Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("10,250", st["cell_r"]), Paragraph("84.77±1.00", st["cell_r"]), Paragraph("—", st["cell_r"])],
-            [Paragraph("Opt 32×32 Rand. 1024f Ridge", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("10,250", st["cell_r"]), Paragraph("85.57±1.76", st["cell_r"]), Paragraph("—", st["cell_r"])],
-            [Paragraph("Opt 32×32 PAT 1024f Ridge", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("10,250", st["cell_r"]), Paragraph("—", st["cell_r"]), Paragraph("79.50±0.80", st["cell_r"])],
-            [Paragraph("Raw 28×28 MLP (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("203.5K", st["cell_r"]), Paragraph("93.93±0.99", st["cell_r"]), Paragraph("84.47±0.55", st["cell_r"])],
-            [Paragraph("32×32 Rand + MLP", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("94.20±0.95", st["cell_r"]), Paragraph("83.97±0.86", st["cell_r"])],
-            [Paragraph("32×32 PAT Pert. MLP", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("89.77±3.27", st["cell_r"]), Paragraph("80.80±1.15", st["cell_r"])],
-            [Paragraph("<b>32×32 PAT Nom. MLP</b>", st["cell_b"]), Paragraph("<b>1,024</b>", st["cell_br"]), Paragraph("<b>265.0K</b>", st["cell_br"]), Paragraph("<b>94.37±0.84</b>", st["cell_br"]), Paragraph("<b>84.20±0.44</b>", st["cell_br"])],
+            [Paragraph("Raw 28×28 Ridge (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("7,850", st["cell_r"]), Paragraph("85.43±1.36", st["cell_r"]), Paragraph("80.57±0.95", st["cell_r"])],
+            [Paragraph("Opt 16×16 256f Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("2,570", st["cell_r"]), Paragraph("81.90±1.08", st["cell_r"]), Paragraph("—", st["cell_r"])],
+            [Paragraph("Opt 16×16 1024f Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("10,250", st["cell_r"]), Paragraph("84.13±1.22", st["cell_r"]), Paragraph("—", st["cell_r"])],
+            [Paragraph("Opt 32×32 Rand. 1024f Ridge", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("10,250", st["cell_r"]), Paragraph("85.97±2.05", st["cell_r"]), Paragraph("—", st["cell_r"])],
+            [Paragraph("Opt 32×32 PAT 1024f Ridge", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("10,250", st["cell_r"]), Paragraph("—", st["cell_r"]), Paragraph("79.80±1.93", st["cell_r"])],
+            [Paragraph("Raw 28×28 MLP (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("203.5K", st["cell_r"]), Paragraph("93.93±0.99", st["cell_r"]), Paragraph("85.17±0.15", st["cell_r"])],
+            [Paragraph("32×32 Rand + MLP", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("94.20±0.95", st["cell_r"]), Paragraph("84.70±0.85", st["cell_r"])],
+            [Paragraph("32×32 PAT Pert. MLP", st["cell"]), Paragraph("1,024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("91.07±1.90", st["cell_r"]), Paragraph("81.47±1.27", st["cell_r"])],
+            [Paragraph("<b>32×32 PAT Nom. MLP</b>", st["cell_b"]), Paragraph("<b>1,024</b>", st["cell_br"]), Paragraph("<b>265.0K</b>", st["cell_br"]), Paragraph("<b>94.67±0.55</b>", st["cell_br"]), Paragraph("<b>84.43±0.51</b>", st["cell_br"])],
         ]
         story.append(KeepTogether([
             Paragraph("TABLE III — FULL-SCALE 32×32 HYBRID & DIGITAL BASELINES", st["tab_cap"]),
@@ -745,34 +754,34 @@ def build_pdf(lang, out_path, base_dir, st):
             Spacer(1, 0.9 * mm),
         ]))
         story.append(Paragraph(
-            "Across MNIST [20] and Fashion-MNIST [23] (Table III), random 32×32 optical Ridge improves on raw MNIST pixels (85.57% vs. 82.93%) while "
-            "PAT Ridge is comparable on Fashion-MNIST within 1 SD (79.50±0.80% vs. 79.07±0.81%). Attaching the 265K-parameter MLP lets digital capacity dominate "
-            "within ~0.5 points across nominal PAT (94.37% / 84.20%), random optics (94.20% / 83.97%), and raw pixels (93.93% / 84.47%). Under 8×8 Fashion-MNIST (Fig. 5c), "
-            "PAT linear beats random optics by +9.80 points (71.63% vs. 61.83%; 77.53% MLP vs. 81.47% digital).",
+            "Across MNIST [20] and Fashion-MNIST [23] (Table III), random 32×32 optical Ridge is statistically equivalent to raw MNIST pixels (85.97% vs. 85.43%) while "
+            "PAT Ridge trails raw pixels at the margin on Fashion-MNIST (79.80±1.93% vs. 80.57±0.95%). Attaching the 265K-parameter MLP lets digital capacity dominate "
+            "within ~0.5 points across nominal PAT (94.67% / 84.43%), random optics (94.20% / 84.70%), and raw pixels (93.93% / 85.17%). Under 8×8 Fashion-MNIST (Fig. 5c), "
+            "PAT linear beats matched random optics by +4.76 points (71.63% vs. 66.87%; 77.50% MLP vs. 77.93% linear / 81.43% MLP digital pooling).",
             st["body_noindent"]
         ))
         story.append(Paragraph("C. Mechanical Alignment, Thermal Drift, and Ambient Light Resilience", st["h3"]))
         story.append(Paragraph(
             "Without an external reference arm, axial intensity tolerance scales with Talbot length <i>z<sub>T</sub></i> = 2Δ<i>x</i>²/λ ≈ 8.3 mm. "
-            "On 1,000 test digits (seed 7, base 94.8%, Fig. 4a), LC weight shifts up to 188 μm drop accuracy by ≤0.7 points (94.1%), whereas "
-            "input LCD and CMOS shifts fall past 47 μm (94.0% → 68.2%/68.3% at 188 μm). Axial shifts 0 ≤ Δ<i>Z</i><sub>1</sub> ≤ 8 mm hold 94.7%–95.1%, "
-            "while combined 47 μm + 1 mm yields 87.9% (nominal head) and 88.1% (perturbed-trained head from 87.8%).",
+            "On 1,000 test digits (seed 7, base 94.7%, Fig. 4a), LC weight shifts up to 188 μm drop accuracy by only 0.2 points (94.5%), whereas "
+            "input LCD and CMOS shifts fall past 47 μm (93.7% → 68.3%/68.7% at 188 μm). Axial shifts 0 ≤ Δ<i>Z</i><sub>1</sub> ≤ 8 mm hold 94.3%–94.7%, "
+            "while combined 47 μm + 1 mm yields 88.4% (nominal head) and 88.9% (perturbed-trained head from 89.0%).",
             st["body_noindent"]
         ))
     else:
         t2_rows = [
             [Paragraph("<b>#</b>", st["cell_b"]), Paragraph("<b>Mimari</b>", st["cell_b"]), Paragraph("<b>Opt.W</b>", st["cell_br"]), Paragraph("<b>Dij.W</b>", st["cell_br"]), Paragraph("<b>Test (%)</b>", st["cell_br"])],
-            [Paragraph("1", st["cell"]), Paragraph("Dijital Alan (8×8) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("81,27±0,55", st["cell_r"])],
-            [Paragraph("2", st["cell"]), Paragraph("Dijital PCA (64) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650ᵃ", st["cell_r"]), Paragraph("83,97±1,29", st["cell_r"])],
-            [Paragraph("3", st["cell"]), Paragraph("Serbest Uzay (LC Yok)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("68,57±0,95", st["cell_r"])],
-            [Paragraph("4", st["cell"]), Paragraph("Pasif 16×16 Rast.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("69,00±0,40", st["cell_r"])],
-            [Paragraph("5", st["cell"]), Paragraph("Aktif 16×16 Rast.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("67,43±0,85", st["cell_r"])],
-            [Paragraph("6", st["cell"]), Paragraph("Aktif 32×32 Rast.", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("67,77±0,40", st["cell_r"])],
-            [Paragraph("7", st["cell"]), Paragraph("Pasif 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("73,53±2,04", st["cell_r"])],
-            [Paragraph("8", st["cell"]), Paragraph("Aktif 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("74,13±0,75", st["cell_r"])],
-            [Paragraph("<b>9</b>", st["cell_b"]), Paragraph("<b>Aktif 32×32 PAT Lin.</b>", st["cell_b"]), Paragraph("<b>1.024</b>", st["cell_br"]), Paragraph("<b>650</b>", st["cell_br"]), Paragraph("<b>77,57±2,22</b>", st["cell_br"])],
+            [Paragraph("1", st["cell"]), Paragraph("Dijital Alan (8×8) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("87,00±1,47", st["cell_r"])],
+            [Paragraph("2", st["cell"]), Paragraph("Dijital PCA (64) + Lin.", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650ᵃ", st["cell_r"]), Paragraph("87,73±1,23", st["cell_r"])],
+            [Paragraph("3", st["cell"]), Paragraph("Serbest Uzay (LC Yok)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("75,53±1,63", st["cell_r"])],
+            [Paragraph("4", st["cell"]), Paragraph("Pasif 16×16 Rast.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("70,93±1,39", st["cell_r"])],
+            [Paragraph("5", st["cell"]), Paragraph("Aktif 16×16 Rast.", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("70,47±2,51", st["cell_r"])],
+            [Paragraph("6", st["cell"]), Paragraph("Aktif 32×32 Rast.", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("71,07±1,55", st["cell_r"])],
+            [Paragraph("7", st["cell"]), Paragraph("Pasif 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("72,43±2,93", st["cell_r"])],
+            [Paragraph("8", st["cell"]), Paragraph("Aktif 16×16 PAT", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("650", st["cell_r"]), Paragraph("74,10±2,08", st["cell_r"])],
+            [Paragraph("<b>9</b>", st["cell_b"]), Paragraph("<b>Aktif 32×32 PAT Lin.</b>", st["cell_b"]), Paragraph("<b>1.024</b>", st["cell_br"]), Paragraph("<b>650</b>", st["cell_br"]), Paragraph("<b>78,40±2,31</b>", st["cell_br"])],
             [Paragraph("10", st["cell"]), Paragraph("Dijital Alan + MLP", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("19.210", st["cell_r"]), Paragraph("91,60±1,25", st["cell_r"])],
-            [Paragraph("<b>11</b>", st["cell_b"]), Paragraph("<b>Aktif 32×32 PAT MLP</b>", st["cell_b"]), Paragraph("<b>1.024</b>", st["cell_br"]), Paragraph("<b>19.210</b>", st["cell_br"]), Paragraph("<b>84,53±1,47</b>", st["cell_br"])],
+            [Paragraph("<b>11</b>", st["cell_b"]), Paragraph("<b>Aktif 32×32 PAT MLP</b>", st["cell_b"]), Paragraph("<b>1.024</b>", st["cell_br"]), Paragraph("<b>19.210</b>", st["cell_br"]), Paragraph("<b>86,13±0,74</b>", st["cell_br"])],
         ]
         story.append(KeepTogether([
             Paragraph("TABLO II — KONTROLLÜ MNIST ABLASYONU (8×8, 3 TOHUM)", st["tab_cap"]),
@@ -780,23 +789,23 @@ def build_pdf(lang, out_path, base_dir, st):
             Paragraph("ᵃEğitim kümesinden kurulan 784×64 PCA matrisi hariç.", st["tab_note"]),
         ]))
         story.append(Paragraph(
-            "PAT, 32×32 lineer doğruluğu rastgele optiğe göre +9,80 puan (%67,77 → %77,57) artırırken pasif (%73,53±2,04) ve aktif (%74,13±0,75) "
-            "16×16 PAT, 8×8 sıra darboğazında 1 SS içinde istatistiksel olarak eşdeğerdir. Tek katmanlı optik, 8×8 dijital alan havuzlama (%81,27), "
-            "dijital PCA-64 tavanı (%83,97±1,29) ve dijital MLP (%91,60 vs %84,53) gerisinde kalır.",
+            "PAT, 32×32 lineer doğruluğu eşleşmiş rastgele optiğe göre +7,33 puan (%71,07 → %78,40) artırırken pasif (%72,43±2,93) ve aktif (%74,10±2,08) "
+            "16×16 PAT, 8×8 sıra darboğazında 1 SS içinde istatistiksel olarak eşdeğerdir. Tek katmanlı optik, 8×8 dijital alan havuzlama (%87,00), "
+            "dijital PCA-64 tavanı (%87,73±1,23) ve dijital MLP (%91,60 vs %86,13) gerisinde kalır.",
             st["body"]
         ))
         story.append(Paragraph("B. MNIST ve Fashion-MNIST Üzerinde Tam 32×32 Hibrit Sınıflandırma", st["h3"]))
         t3_rows = [
             [Paragraph("<b>Yapılandırma</b>", st["cell_b"]), Paragraph("<b>Opt.W</b>", st["cell_br"]), Paragraph("<b>Dij.W</b>", st["cell_br"]), Paragraph("<b>MNIST</b>", st["cell_br"]), Paragraph("<b>F-MNIST</b>", st["cell_br"])],
-            [Paragraph("Ham 28×28 Ridge (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("7.850", st["cell_r"]), Paragraph("82,93±1,70", st["cell_r"]), Paragraph("79,07±0,81", st["cell_r"])],
-            [Paragraph("Opt 16×16 256öz Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("2.570", st["cell_r"]), Paragraph("81,73±0,72", st["cell_r"]), Paragraph("—", st["cell_r"])],
-            [Paragraph("Opt 16×16 1024öz Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("10.250", st["cell_r"]), Paragraph("84,77±1,00", st["cell_r"]), Paragraph("—", st["cell_r"])],
-            [Paragraph("Opt 32×32 Rast. 1024öz Ridge", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("10.250", st["cell_r"]), Paragraph("85,57±1,76", st["cell_r"]), Paragraph("—", st["cell_r"])],
-            [Paragraph("Opt 32×32 PAT 1024öz Ridge", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("10.250", st["cell_r"]), Paragraph("—", st["cell_r"]), Paragraph("79,50±0,80", st["cell_r"])],
-            [Paragraph("Ham 28×28 MLP (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("203.5K", st["cell_r"]), Paragraph("93,93±0,99", st["cell_r"]), Paragraph("84,47±0,55", st["cell_r"])],
-            [Paragraph("32×32 Rast + MLP", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("94,20±0,95", st["cell_r"]), Paragraph("83,97±0,86", st["cell_r"])],
-            [Paragraph("32×32 PAT Kusurlu MLP", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("89,77±3,27", st["cell_r"]), Paragraph("80,80±1,15", st["cell_r"])],
-            [Paragraph("<b>32×32 PAT Kalibre MLP</b>", st["cell_b"]), Paragraph("<b>1.024</b>", st["cell_br"]), Paragraph("<b>265.0K</b>", st["cell_br"]), Paragraph("<b>94,37±0,84</b>", st["cell_br"]), Paragraph("<b>84,20±0,44</b>", st["cell_br"])],
+            [Paragraph("Ham 28×28 Ridge (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("7.850", st["cell_r"]), Paragraph("85,43±1,36", st["cell_r"]), Paragraph("80,57±0,95", st["cell_r"])],
+            [Paragraph("Opt 16×16 256öz Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("2.570", st["cell_r"]), Paragraph("81,90±1,08", st["cell_r"]), Paragraph("—", st["cell_r"])],
+            [Paragraph("Opt 16×16 1024öz Ridge", st["cell"]), Paragraph("256", st["cell_r"]), Paragraph("10.250", st["cell_r"]), Paragraph("84,13±1,22", st["cell_r"]), Paragraph("—", st["cell_r"])],
+            [Paragraph("Opt 32×32 Rast. 1024öz Ridge", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("10.250", st["cell_r"]), Paragraph("85,97±2,05", st["cell_r"]), Paragraph("—", st["cell_r"])],
+            [Paragraph("Opt 32×32 PAT 1024öz Ridge", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("10.250", st["cell_r"]), Paragraph("—", st["cell_r"]), Paragraph("79,80±1,93", st["cell_r"])],
+            [Paragraph("Ham 28×28 MLP (6k)", st["cell"]), Paragraph("0", st["cell_r"]), Paragraph("203.5K", st["cell_r"]), Paragraph("93,93±0,99", st["cell_r"]), Paragraph("85,17±0,15", st["cell_r"])],
+            [Paragraph("32×32 Rast + MLP", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("94,20±0,95", st["cell_r"]), Paragraph("84,70±0,85", st["cell_r"])],
+            [Paragraph("32×32 PAT Kusurlu MLP", st["cell"]), Paragraph("1.024", st["cell_r"]), Paragraph("265.0K", st["cell_r"]), Paragraph("91,07±1,90", st["cell_r"]), Paragraph("81,47±1,27", st["cell_r"])],
+            [Paragraph("<b>32×32 PAT Nominal MLP</b>", st["cell_b"]), Paragraph("<b>1.024</b>", st["cell_br"]), Paragraph("<b>265.0K</b>", st["cell_br"]), Paragraph("<b>94,67±0,55</b>", st["cell_br"]), Paragraph("<b>84,43±0,51</b>", st["cell_br"])],
         ]
         story.append(KeepTogether([
             Paragraph("TABLO III — TAM ÖLÇEKLİ 32×32 HİBRİT VE DİJİTAL KIYAS", st["tab_cap"]),
@@ -804,18 +813,18 @@ def build_pdf(lang, out_path, base_dir, st):
             Spacer(1, 0.9 * mm),
         ]))
         story.append(Paragraph(
-            "MNIST [20] ve Fashion-MNIST [23] genelinde (Tablo III) sabit rastgele 32×32 optik Ridge MNIST'te ham Ridge'i geçerken (%85,57 vs %82,93), "
-            "PAT Ridge Fashion-MNIST'te 1 SS içinde karşılaştırılabilirdir (%79,50±0,80 vs %79,07±0,81). 265K MLP eklendiğinde elektronik kapasite baskın çıkarak "
-            "kalibre PAT (%94,37/%84,20), rastgele optik (%94,20/%83,97) ve ham piksel (%93,93/%84,47) ~0,5 puan içine toplanır. 8×8 Fashion-MNIST'te ise (Şekil 5c) "
-            "PAT lineer +9,80 puan fark atar (%71,63 vs %61,83; MLP %77,53 vs %81,47 dijital).",
+            "MNIST [20] ve Fashion-MNIST [23] genelinde (Tablo III) sabit rastgele 32×32 optik Ridge MNIST'te ham Ridge ile 1 SS içinde eşdeğerdir (%85,97 vs %85,43), "
+            "PAT Ridge Fashion-MNIST'te ham piksellerin sınırda gerisindedir (%79,80±1,93 vs %80,57±0,95). 265K MLP eklendiğinde elektronik kapasite baskın çıkarak "
+            "nominal PAT (%94,67/%84,43), rastgele optik (%94,20/%84,70) ve ham piksel (%93,93/%85,17) ~0,5 puan içine toplanır. 8×8 Fashion-MNIST'te ise (Şekil 5c) "
+            "PAT lineer eşleşmiş rastgele optiği +4,76 puan geçer (%71,63 vs %66,87; MLP %77,50 vs %77,93 lineer / %81,43 MLP dijital havuzlama).",
             st["body_noindent"]
         ))
         story.append(Paragraph("C. Mekanik Hizalama, Sıcaklık Kayması ve Ortam Işığı Dayanımı", st["h3"]))
         story.append(Paragraph(
             "Harici referans kolsuz ortak-yol optik düzlemde eksenel tolerans Talbot uzunluğu <i>z<sub>T</sub></i> = 2Δ<i>x</i>²/λ ≈ 8,3 mm ile ölçeklenir. "
-            "1.000 test örneğinde (tohum 7, baz %94,8, Şekil 4a), 188 μm LC ağırlık kayması ≤0,7 puan kayıp yaratırken (%94,1), giriş LCD ve CMOS "
-            "kaymaları 47 μm (%94,0) sonrası %68,2/%68,3'e iner. 0 ≤ Δ<i>Z</i><sub>1</sub> ≤ 8 mm eksenel sapmalar %94,7–%95,1 aralığında kalır; "
-            "kombine 47 μm + 1 mm nominal kafada %87,9, pertürbe kafada ise %88,1 (baz %87,8) verir.",
+            "1.000 test örneğinde (tohum 7, baz %94,7, Şekil 4a), 188 μm LC ağırlık kayması yalnızca 0,2 puan kayıp yaratırken (%94,5), giriş LCD ve CMOS "
+            "kaymaları 47 μm (%93,7) sonrası %68,3/%68,7'ye iner. 0 ≤ Δ<i>Z</i><sub>1</sub> ≤ 8 mm eksenel sapmalar %94,3–%94,7 aralığında kalır; "
+            "kombine 47 μm + 1 mm nominal kafada %88,4, pertürbe kafada ise %88,9 (baz %89,0; −0,1 puan) verir.",
             st["body_noindent"]
         ))
 
@@ -824,13 +833,13 @@ def build_pdf(lang, out_path, base_dir, st):
     story.append(PageBreak())
     fig4_cap = (
         "<b>Fig. 4.</b> Mechanical and environmental tests (<i>N</i><sub>test</sub> = 1000, seed 7): <b>(a)</b> lateral shifts of LC weight cell "
-        "(94.8% → 94.1% at 188 μm), input LCD (→ 68.2%), CMOS (→ 68.3%), and combined 47 μm + 1 mm (87.9% nom.; 88.1% pert.). "
-        "<b>(b)</b> Stray ambient light raw vs. 16-frame dark subtraction + training floor and 30 °C+1%+2% recovery (69.7% → 95.0%). "
+        "(94.7% → 94.5% at 188 μm), input LCD (→ 68.3%), CMOS (→ 68.7%), and combined 47 μm + 1 mm (88.4% nom.; 88.9% pert. from 89.0% base). "
+        "<b>(b)</b> Stray ambient light raw vs. 16-frame dark subtraction + training floor and 30 °C+1%+2% recovery (64.4% → 95.0%). "
         "<b>(c)</b> Uncalibrated Haller thermal sweep (20–55 °C, <i>T<sub>c</sub></i> = 59 °C)."
         if lang == "en" else
-        "<b>Şekil 4.</b> Mekanik ve çevresel testler (<i>N</i><sub>test</sub> = 1000, tohum 7): <b>(a)</b> LC ağırlık (%94,8 → %94,1, 188 μm), "
-        "giriş LCD (→ %68,2), CMOS (→ %68,3) kaymaları ve kombine 47 μm + 1 mm (%87,9 nom.; %88,1 kusurlu). "
-        "<b>(b)</b> Ortam ışığı ham çöküşe karşı 16 kareli karanlık çıkarma ve 30 °C+%1+%2 iyileşmesi (%69,7 → %95,0). "
+        "<b>Şekil 4.</b> Mekanik ve çevresel testler (<i>N</i><sub>test</sub> = 1000, tohum 7): <b>(a)</b> LC ağırlık (%94,7 → %94,5, 188 μm), "
+        "giriş LCD (→ %68,3), CMOS (→ %68,7) kaymaları ve kombine 47 μm + 1 mm (%88,4 nom.; %88,9 kusurlu, baz %89,0). "
+        "<b>(b)</b> Ortam ışığı ham çöküşe karşı 16 kareli karanlık çıkarma ve 30 °C+%1+%2 iyileşmesi (%64,4 → %95,0). "
         "<b>(c)</b> Kalibrasyonsuz E7 Haller sıcaklık taraması (20–55 °C, <i>T<sub>c</sub></i> = 59 °C)."
     )
     story.append(fig_block(os.path.join(fig_dir, f"makale_fig4_dayanim_{lang}.png"), fig4_cap, st, 178, max_img_h_mm=43.0))
@@ -841,18 +850,19 @@ def build_pdf(lang, out_path, base_dir, st):
         story.append(Paragraph("Under Haller thermal scaling [21], [22]:", st["body_noindent"]))
         story.append(eq_block("Δn(T) / Δn(25 °C) = [ (T<sub>c</sub> − T) / (T<sub>c</sub> − 25) ]<sup>β</sup>,   T<sub>c</sub> = 59 °C,  β = 0.22", "(11)", st, col_w))
         story.append(Paragraph(
-            "uncalibrated accuracy holds 94.8%–94.9% over 20–35 °C and 92.2% at 55 °C (Fig. 4c). Raw stray light drops to 68.3% (1%) and 11.4% (5%), "
-            "whereas 16-frame dark subtraction + Eq. (10) holds 94.8% (1%), 94.3% (5%), 88.5% (20%), and 78.4% (50%), recovering combined "
-            "30 °C + 1% leak + 2% drift from 69.7% to 95.0%. ±10% laser power stays in 94.7%–95.0%.",
+            "uncalibrated accuracy holds 94.4%–94.7% over 20–45 °C and 92.3% at 55 °C (Fig. 4c). Raw stray light drops to 64.1% (1%) and 9.8% (5%), "
+            "whereas 16-frame dark subtraction + Eq. (10) holds 94.4% (1%), 93.7% (5%), 88.2% (20%), and 78.2% (50%), recovering combined "
+            "30 °C + 1% leak + 2% drift from 64.4% to 95.0%. ±10% laser power stays in 94.2%–94.9%.",
             st["body_noindent"]
         ))
         story.append(Paragraph("D. Bit Quantization, Aperture Proxy, and Wavefront Aberrations", st["h3"]))
         story.append(Paragraph(
-            "With 8-bit HDMI input + <i>b</i>-bit weight quantization (seed 7, Fig. 5a), accuracy stays 94.8%–94.9% down to 4 bits, 94.6% at 3 bits, "
-            "and 92.9% at 2 bits. On the <i>N</i> = 256 sub-aperture fill-factor proxy down to 25% fill, uncalibrated accuracy slips 91.4% → 90.7% while "
-            "head recalibration keeps 92.3%. Across Zernike aberrations (0–15λ PV) plus a 3<i>Z</i><sub>1</sub> 0.04 ghost under matched CE Adam heads (Fig. 5b), "
-            "recalibrating only the linear head recovers 1λ–10λ distortions (78.63%–77.53%, comparable to blind PAT 78.50%–76.70%), while at 15λ "
-            "uncompensated accuracy falls to 65.27 ± 7.67%, head recalibration achieves 76.67 ± 1.15%, and PAT reaches 77.30 ± 1.82%.",
+            "8-bit HDMI input + <i>b</i>-bit weight quantization (seed 7, Fig. 5a) holds 94.6%–94.9% down to 4 bits and slips to 92.7% at 2 bits. "
+            "On the <i>N</i> = 256 sub-aperture proxy at 25% fill, uncalibrated and head-recalibrated both score 91.3% (from 92.3%). Across Zernike "
+            "aberrations (0–15λ PV) + 3<i>Z</i><sub>1</sub> 0.04 ghost under matched CE Adam heads (Fig. 5b), head-only recalibration recovers 1λ–10λ "
+            "losses (78.63%–77.53% vs. PAT 78.50%–76.70%), and at 15λ uncompensated 65.27 ± 7.67% rises to 76.67 ± 1.15% (head) and 77.30 ± 1.82% "
+            "(PAT, +0.63 pts within one combined SD). Under structural mismatch (±10% perturbed LC curve, camera gamma 0.90, speckle), "
+            "uncompensated 71.30 ± 1.08% improves to 79.13 ± 2.39% with head recalibration vs. 76.80 ± 1.65% for PAT.",
             st["body_noindent"]
         ))
         bom_rows = [
@@ -873,8 +883,8 @@ def build_pdf(lang, out_path, base_dir, st):
         story.append(Paragraph(
             "Direct prototype components in Table IV total $627–$767 ($784–$959 with 25% contingency). Three timescales must be kept distinct: "
             "coherent wave transit across 10 cm takes ~0.33 ns; physical throughput is gated by 60 Hz LCD/camera frame intervals (~16.7 ms) during "
-            "inference and ~50 ms nematic settling during weight updates; and our uncompiled NumPy CPU ASM simulator runs in 0.78 ms median per digit "
-            "(<i>N</i> = 128², Intel64 Family 6 Model 170 CPU, Python 3.11.9 / NumPy 2.2.3, mean 0.87 ms, IQR 0.08 ms, range 0.71–2.74 ms over 50 runs).",
+            "inference and ~50 ms nematic settling during weight updates; and our uncompiled NumPy CPU ASM simulator runs in 1.04 ms median per digit "
+            "(<i>N</i> = 128², Intel64 Family 6 Model 170 CPU, Python 3.11.9 / NumPy 2.2.3, mean 1.27 ms, IQR 0.63 ms, range 0.84–2.23 ms over 50 runs).",
             st["body_noindent"]
         ))
         story.append(Paragraph(
@@ -887,18 +897,19 @@ def build_pdf(lang, out_path, base_dir, st):
         story.append(Paragraph("Haller bağıntısıyla [21], [22] modellenen termal kaymada:", st["body_noindent"]))
         story.append(eq_block("Δn(T) / Δn(25 °C) = [ (T<sub>c</sub> − T) / (T<sub>c</sub> − 25) ]<sup>β</sup>,   T<sub>c</sub> = 59 °C,  β = 0,22", "(11)", st, col_w))
         story.append(Paragraph(
-            "kalibrasyonsuz doğruluk 20–35 °C'de %94,8–%94,9 ve 55 °C'de %92,2 kalır (Şekil 4c). Ham sızıntıda %68,3 (%1) ve %11,4 (%5) olan doğruluk, "
-            "16 kareli karanlık çıkarma + Denklem (10) ile %94,8 (%1), %94,3 (%5), %88,5 (%20) ve %78,4 (%50) düzeyinde korunur; kombine 30 °C + %1 + %2 "
-            "testini %69,7'den %95,0'a çıkarır. ±10% lazer gücü %94,7–%95,0 aralığındadır.",
+            "kalibrasyonsuz doğruluk 20–45 °C'de %94,4–%94,7 ve 55 °C'de %92,3 kalır (Şekil 4c). Ham sızıntıda %64,1 (%1) ve %9,8 (%5) olan doğruluk, "
+            "16 kareli karanlık çıkarma + Denklem (10) ile %94,4 (%1), %93,7 (%5), %88,2 (%20) ve %78,2 (%50) düzeyinde korunur; kombine 30 °C + %1 + %2 "
+            "testini %64,4'ten %95,0'a çıkarır. ±10% lazer gücü %94,2–%94,9 aralığındadır.",
             st["body_noindent"]
         ))
         story.append(Paragraph("D. Bit Kuantizasyonu, Alt-Açıklık Vekili ve Dalga Cephesi Sapması", st["h3"]))
         story.append(Paragraph(
-            "8-bit HDMI giriş + <i>b</i>-bit ağırlık basamaklamasında (tohum 7, Şekil 5a) doğruluk 4-bit'e dek %94,8–%94,9, 3-bit'te %94,6 ve 2-bit'te "
-            "%92,9 kalır. <i>N</i> = 256 alt-açıklık vekilinde %25 dolulukta kalibrasyonsuz %90,7'ye karşın kafa kalibrasyonu %92,3 korur. "
-            "Zernike sapması (0–15λ PV) + 3<i>Z</i><sub>1</sub> 0,04 hayalette eşit CE Adam kafalarıyla (Şekil 5b) 1λ–10λ aralığında yalnız kafa "
-            "kalibrasyonu (%78,63–%77,53) habersiz PAT'ye (%78,50–%76,70) denk iken, 15λ'da kalibrasyonsuz %65,27 ± 7,67'ye iner, kafa "
-            "kalibrasyonu %76,67 ± 1,15 ve PAT %77,30 ± 1,82 elde eder.",
+            "8-bit HDMI giriş + <i>b</i>-bit basamaklamada (tohum 7, Şekil 5a) doğruluk 4-bit'e dek %94,6–%94,9 ve 2-bit'te %92,7 kalır. "
+            "<i>N</i> = 256 alt-açıklık vekilinde %25 dolulukta kalibrasyonsuz ve kafa kalibrasyonu %91,3 verir (baz %92,3). Zernike sapması (0–15λ PV) "
+            "+ 3<i>Z</i><sub>1</sub> 0,04 hayalette eşit CE Adam kafalarıyla (Şekil 5b) 1λ–10λ'da yalnız kafa (%78,63–%77,53) habersiz PAT'ye (%78,50–%76,70) "
+            "denktir; 15λ'da kalibrasyonsuz %65,27 ± 7,67, kafa kalibrasyonu %76,67 ± 1,15 ve PAT %77,30 ± 1,82 elde eder (+0,63 puan birleşik SS içinde). "
+            "Yapısal uyumsuzlukta (±%10 pertürbe LC eğrisi, 0,90 kamera gamması, benek) kalibrasyonsuz %71,30 ± 1,08, yalnız-kafa %79,13 ± 2,39 ve PAT "
+            "%76,80 ± 1,65 verir; yani yalnız-kafa kalibrasyonu bu rejimde PAT'yi geçer.",
             st["body_noindent"]
         ))
         bom_rows = [
@@ -919,7 +930,7 @@ def build_pdf(lang, out_path, base_dir, st):
         story.append(Paragraph(
             "Tablo IV'teki modüler optik ray kurulumu doğrudan parçada 627–767 USD (%25 yedekle 784–959 USD) tutmaktadır. Üç zaman ölçeği ayrılmalıdır: "
             "10 cm optik geçiş ~0,33 ns sürer; fiziksel donanım akışını çıkarımda 60 Hz LCD/kamera (~16,7 ms) ve ağırlık değişiminde ~50 ms nematik "
-            "gevşeme belirler; derlenmemiş CPU NumPy ASM simülasyonu ise <i>N</i> = 128²'de 0,78 ms ortanca sürede (Intel64 Family 6 Model 170 CPU, Python 3.11.9 / NumPy 2.2.3, ort. 0,87 ms, IQR 0,08 ms, 50 koşum) çalışır.",
+            "gevşeme belirler; derlenmemiş CPU NumPy ASM simülasyonu ise <i>N</i> = 128²'de 1,04 ms ortanca sürede (Intel64 Family 6 Model 170 CPU, Python 3.11.9 / NumPy 2.2.3, ort. 1,27 ms, IQR 0,63 ms, 50 koşum) çalışır.",
             st["body_noindent"]
         ))
         story.append(Paragraph(
@@ -930,40 +941,43 @@ def build_pdf(lang, out_path, base_dir, st):
         ))
 
     # Page 6: Fig 5 banner + Limitations + Conclusion + Back Matter + All 24 References!
-    story.append(NextPageTemplate("P_TOPFIG"))
+    story.append(NextPageTemplate("P_TOPFIG_LAST"))
     story.append(PageBreak())
     fig5_cap = (
-        "<b>Fig. 5.</b> <b>(a)</b> Weight bit quantization (4-bit 94.9%, 2-bit 92.9%) and <i>N</i> = 256 sub-aperture fill-factor inset (uncalibrated vs. "
+        "<b>Fig. 5.</b> <b>(a)</b> Weight bit quantization (4-bit 94.8%, 2-bit 92.7%) and <i>N</i> = 256 sub-aperture fill-factor inset (uncalibrated vs. "
         "head recalibrated). <b>(b)</b> 3-seed Zernike wavefront aberrations (0–15λ PV + 3<i>Z</i><sub>1</sub> ghost): uncompensated, CE head-only control, "
         "and blind-surrogate PAT. <b>(c)</b> 3-seed 10-class Fashion-MNIST across 8×8 and 32×32 regimes."
         if lang == "en" else
-        "<b>Şekil 5.</b> <b>(a)</b> Ağırlık bit basamaklaması (4-bit %94,9, 2-bit %92,9) ve <i>N</i> = 256 alt-açıklık doluluğu iç grafiği (kalibrasyonsuz ve kafa kalibre). "
+        "<b>Şekil 5.</b> <b>(a)</b> Ağırlık bit basamaklaması (4-bit %94,8, 2-bit %92,7) ve <i>N</i> = 256 alt-açıklık doluluğu iç grafiği (kalibrasyonsuz ve kafa kalibre). "
         "<b>(b)</b> 3 tohumlu Zernike dalga cephesi sapmaları (0–15λ PV + 3<i>Z</i><sub>1</sub> hayalet): kalibrasyonsuz, CE yalnız-kafa ve habersiz vekil PAT. "
         "<b>(c)</b> 8×8 ve 32×32 rejimlerinde 3 tohumlu Fashion-MNIST."
     )
-    story.append(fig_block(os.path.join(fig_dir, f"makale_fig5_gercekcilik_{lang}.png"), fig5_cap, st, 180, max_img_h_mm=45.0))
+    story.append(fig_block(os.path.join(fig_dir, f"makale_fig5_gercekcilik_{lang}.png"), fig5_cap, st, 180, max_img_h_mm=38.5))
     story.append(NextPageTemplate("P_TWOCOL"))
     story.append(FrameBreak())
 
     if lang == "en":
         story.append(Paragraph("A. Limitations", st["h3"]))
         story.append(Paragraph(
-            "Six limitations qualify these findings. First, all accuracies and fault tolerances are simulated; physical fabrication and detector measurements "
-            "remain future work. Second, on 8×8 detectors PAT beats random optics (+9.80 pts) yet trails digital area pooling (77.57% vs. 81.27%), while a "
-            "265K MLP at 32×32 masks optical differences within ~0.5 pts.",
+            "Eight limitations qualify these findings. First, all accuracies and fault tolerances are simulated; physical fabrication and detector measurements "
+            "remain future work. Second, on 8×8 detectors PAT beats matched random optics (+7.33 pts) yet trails digital area pooling (78.40% vs. 87.00%), while a "
+            "265K MLP at 32×32 masks optical differences within ~0.5 pts. Third, Eq. (6) uses an ECB proxy whereas TN panels rotate polarization [18]. Fourth, "
+            "monochromatic models omit laser speckle, finite coherence, and higher-order ghosts.",
             st["body_noindent"]
         ))
         story.append(Paragraph(
-            "Third, Eq. (6) uses an ECB proxy whereas TN mSLA panels rotate polarization [18] and require empirical lookup calibration. Fourth, monochromatic "
-            "plane-wave models omit DPSS laser speckle, finite coherence, and higher-order ghosts. Fifth, our <i>N</i> = 256 aperture test acts as a scaled proxy rather than "
-            "resolving native 47 μm sub-pixels. Finally, cell-specific weights do not transfer directly across devices without robustness objectives such as Sharpness-Aware Training [24].",
+            "Fifth, <i>N</i> = 256 sub-aperture fill serves as a scaled proxy rather than native 47 μm resolution. Sixth, the default plant probes parametric shifts "
+            "within the ASM class, so we added the structural-mismatch test in Sec. IV (where PAT trails head-only recalibration). Seventh, hardware PAT requires ~16.7 ms/sample "
+            "(60 Hz), showing feasibility rather than fast online training. Finally, 3-seed fixed splits apply, and cell-specific weights do not transfer across alignments "
+            "without robustness methods like Sharpness-Aware Training [24].",
             st["body"]
         ))
         story.append(Paragraph("VI. CONCLUSION", st["h2"]))
         story.append(Paragraph(
             "Grounded in nematic scattering (15–40 dB/cm) and Alt–Pleshko RMS bounds (5.28× loss on 16 passive rows), ZERRE (Model H) pairs commodity mSLA "
-            "LCDs with Wirtinger-adjoint PAT within an estimated $784–$959 BOM, lifting 8×8 linear MNIST by +9.80 points over random optics (77.57%) and reaching "
-            "94.37% MNIST and 84.20% Fashion-MNIST at 32×32 hybrid readout while defining concrete benchtop validation steps.",
+            "LCDs with Wirtinger-adjoint PAT within an estimated $784–$959 BOM, lifting 8×8 linear MNIST by +7.33 points over matched random optics (78.40%) "
+            "yet remaining 8.60 pts below digital area pooling (87.00%) and reaching a 94.67% MNIST / 84.43% Fashion-MNIST nominal-twin upper bound at 32×32 hybrid "
+            "readout while defining concrete benchtop validation steps as a design-feasibility study.",
             st["body_noindent"]
         ))
         story.append(Paragraph("DATA AND CODE AVAILABILITY", st["h2"]))
@@ -971,7 +985,7 @@ def build_pdf(lang, out_path, base_dir, st):
             "Simulation scripts (<code>zerre_twin.py</code>, <code>zerre_pat_torch.py</code>), interactive WebGL/ASM tool (<code>start_server.py</code>), "
             "physics tests (<code>tests/test_zerre_physics.py</code>), 3-seed JSON outputs (<code>makale/scripts/paper_results.json</code>), and build scripts are "
             "released under the <b>MIT License</b> (code) and <b>CC BY 4.0</b> (paper/figures) at "
-            "https://github.com/hamzasolak/zerre (release tag v0.4.0; ORCID: 0009-0004-7541-9620).",
+            "https://github.com/hamzasolak/zerre (release tag v0.5.0; ORCID: 0009-0004-7541-9620).",
             st["body_noindent"]
         ))
         story.append(Paragraph("FUNDING & CONFLICTS OF INTEREST", st["h2"]))
@@ -986,22 +1000,24 @@ def build_pdf(lang, out_path, base_dir, st):
     else:
         story.append(Paragraph("A. Sınırlılıklar", st["h3"]))
         story.append(Paragraph(
-            "Altı temel sınırlılık bulguları çerçeveler. İlk olarak tüm veriler simülasyon kaynaklıdır; fiziksel kurulum ve sensör gürültüsü ölçümleri "
-            "sonraki aşamadır. İkincisi, 8×8 dedektörde PAT rastgele optiği +9,80 puan geçse de dijital alan havuzlamanın gerisindedir (%77,57 vs %81,27); "
-            "32×32'de 265K MLP ise optik farkları ~0,5 puana sıkıştırır.",
+            "Sekiz sınırlılık bulguları çerçeveler. İlk olarak tüm veriler simülasyon kaynaklıdır; fiziksel kurulum ve sensör gürültüsü ölçümleri "
+            "sonraki aşamadır. İkincisi, 8×8 dedektörde PAT eşleşmiş rastgele optiği +7,33 puan geçse de dijital alan havuzlamanın (%87,00) gerisindedir "
+            "ve 32×32'de 265K MLP optik farkları ~0,5 puana sıkıştırır. Üçüncüsü, (6) ECB vekili kullanırken TN paneller polarizasyon çevirir [18]. "
+            "Dördüncüsü, skaler modeller lazer benek gürültüsünü ve çoklu yansımaları ihmal eder.",
             st["body_noindent"]
         ))
         story.append(Paragraph(
-            "Üçüncüsü, (6) ECB vekili kullanırken TN mSLA paneller polarizasyon çevirir [18] ve deneysel kalibrasyon ister. Dördüncüsü, skaler modeller "
-            "DPSS lazer benek gürültüsünü ve çoklu yansımaları ihmal eder. Beşincisi, <i>N</i> = 256 alt-açıklık testi ölçeklenmiş bir vekildir. Altıncısı, bir "
-            "hücreye göre eğitilen ağırlıklar Keskinlik-Farkındalıklı Eğitim [24] olmadan başka bir düzeneğe doğrudan aktarılamaz.",
+            "Beşincisi, <i>N</i> = 256 alt-açıklık testi ölçeklenmiş bir vekildir. Altıncısı, varsayılan sistem ASM içinde parametrik pertürbasyonu sınadığından "
+            "Bölüm IV'e yapısal uyumsuzluk testi eklenmiştir (PAT yalnız-kafanın gerisinde kalır). Yedincisi, donanımda PAT 60 Hz'de ~16,7 ms/örnek sürdüğünden "
+            "hızlı çevrimiçi eğitim değil fizibilite gösterir. Son olarak 3 tohumlu sabit bölmeler kullanılmış olup ağırlıklar Keskinlik-Farkındalıklı Eğitim [24] olmadan aktarılamaz.",
             st["body"]
         ))
         story.append(Paragraph("VI. SONUÇ", st["h2"]))
         story.append(Paragraph(
             "Nematik saçılma (15–40 dB/cm) ve Alt–Pleshko RMS kısıtları (16 satırda 5,28× kayıp) temelinde sentezlenen ZERRE (Model H), 784–959 USD "
-            "bütçe dahilinde Wirtinger-eşlenik PAT ile 8×8 lineer MNIST doğruluğunu +9,80 puan artırıp (%77,57) 32×32 hibrit okuma ile %94,37 MNIST "
-            "ve %84,20 Fashion-MNIST doğruluğuna ulaşmakta, deneysel doğrulama sınırlarını netleştirmektedir.",
+            "bütçe dahilinde Wirtinger-eşlenik PAT ile 8×8 lineer MNIST doğruluğunu eşleşmiş rastgele optiğe göre +7,33 puan artırırken (%78,40) "
+            "dijital alan havuzlamanın 8,60 puan gerisinde kalmakta; 32×32 hibrit okumada nominal-ikiz üst sınırı %94,67 MNIST ve %84,43 "
+            "Fashion-MNIST'e ulaşarak çalışmayı deneysel doğrulama adımlarını netleştiren bir fizibilite değerlendirmesi olarak konumlandırmaktadır.",
             st["body_noindent"]
         ))
         story.append(Paragraph("VERİ VE KOD ERİŞİLEBİLİRLİĞİ", st["h2"]))
@@ -1009,7 +1025,7 @@ def build_pdf(lang, out_path, base_dir, st):
             "Simülasyon kodları (<code>zerre_twin.py</code>, <code>zerre_pat_torch.py</code>), etkileşimli WebGL/ASM aracı (<code>start_server.py</code>), "
             "fizik testleri (<code>tests/test_zerre_physics.py</code>), 3 tohumlu JSON sonuçları (<code>makale/scripts/paper_results.json</code>) ve derleme betikleri "
             "<b>MIT Lisansı</b> (kod) ve <b>CC BY 4.0</b> (makale/şekiller) ile https://github.com/hamzasolak/zerre adresinde "
-            "(sürüm etiketi v0.4.0; ORCID: 0009-0004-7541-9620) sunulur.",
+            "(sürüm etiketi v0.5.0; ORCID: 0009-0004-7541-9620) sunulur.",
             st["body_noindent"]
         ))
         story.append(Paragraph("FİNANSMAN VE ÇIKAR ÇATIŞMASI", st["h2"]))
