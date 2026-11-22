@@ -1,0 +1,126 @@
+{
+  "config": {
+    "seed": 7,
+    "n_test": 1000
+  },
+  "quantization": [
+    {
+      "bits": 64,
+      "label": "Float64",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 12,
+      "label": "12-bit (4096 lvls)",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 8,
+      "label": "8-bit (256 lvls)",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 6,
+      "label": "6-bit (64 lvls)",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 5,
+      "label": "5-bit (32 lvls)",
+      "ptq_acc": 94.9
+    },
+    {
+      "bits": 4,
+      "label": "4-bit (16 lvls)",
+      "ptq_acc": 94.9
+    },
+    {
+      "bits": 3,
+      "label": "3-bit (8 lvls)",
+      "ptq_acc": 94.6
+    },
+    {
+      "bits": 2,
+      "label": "2-bit (4 lvls)",
+      "ptq_acc": 92.9
+    }
+  ],
+  "black_matrix": [
+    {
+      "fill_factor_pct": 100,
+      "uncal_acc": 91.4,
+      "head_recalibrated_acc": 91.4
+    },
+    {
+      "fill_factor_pct": 75,
+      "uncal_acc": 91.1,
+      "head_recalibrated_acc": 92.9
+    },
+    {
+      "fill_factor_pct": 56,
+      "uncal_acc": 90.7,
+      "head_recalibrated_acc": 92.0
+    },
+    {
+      "fill_factor_pct": 36,
+      "uncal_acc": 90.3,
+      "head_recalibrated_acc": 92.3
+    },
+    {
+      "fill_factor_pct": 25,
+      "uncal_acc": 90.7,
+      "head_recalibrated_acc": 92.3
+    }
+  ],
+  "zernike_aberration": [
+    {
+      "pv_waves": 0.0,
+      "uncompensated_acc": 77.5,
+      "head_only_acc": 77.5,
+      "pat_compensated_acc": 77.5
+    },
+    {
+      "pv_waves": 1.0,
+      "uncompensated_acc": 77.2,
+      "head_only_acc": 77.4,
+      "pat_compensated_acc": 77.6
+    },
+    {
+      "pv_waves": 3.0,
+      "uncompensated_acc": 76.6,
+      "head_only_acc": 77.4,
+      "pat_compensated_acc": 77.2
+    },
+    {
+      "pv_waves": 6.0,
+      "uncompensated_acc": 76.7,
+      "head_only_acc": 77.4,
+      "pat_compensated_acc": 76.0
+    },
+    {
+      "pv_waves": 10.0,
+      "uncompensated_acc": 73.6,
+      "head_only_acc": 76.5,
+      "pat_compensated_acc": 74.7
+    },
+    {
+      "pv_waves": 15.0,
+      "uncompensated_acc": 71.5,
+      "head_only_acc": 75.5,
+      "pat_compensated_acc": 76.3
+    }
+  ],
+  "fashion_mnist": {
+    "no_optics_8x8_linear": 76.2,
+    "no_optics_8x8_mlp": 83.2,
+    "random_32x32_8x8_linear": 62.3,
+    "pat_32x32_8x8_linear": 72.7,
+    "pat_32x32_8x8_mlp": 78.5,
+    "no_optics_raw_ridge": 80.0,
+    "no_optics_raw_mlp": 85.0,
+    "random_32x32_mlp": 84.9,
+    "pat_32x32_ridge": 80.3,
+    "pat_32x32_perturbed_mlp": 81.2,
+    "pat_32x32_nominal_mlp": 84.4
+  }
+}

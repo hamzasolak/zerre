@@ -1,0 +1,22 @@
+{
+  "title": "ZERRE (Model H): Scalar-Wave Digital Twin and Physics-Aware Training Simulation Suite",
+  "description": "Open-source scalar-wave Angular Spectrum digital twin, exact Wirtinger complex-adjoint Physics-Aware Training (PAT) engine, Alt-Pleshko passive-matrix model, and interactive WebGL simulator.",
+  "upload_type": "software",
+  "license": "MIT",
+  "version": "0.4.0",
+  "creators": [
+    {
+      "name": "Solak, Hamza",
+      "affiliation": "Independent Researcher, Türkiye",
+      "orcid": "0009-0004-7541-9620"
+    }
+  ],
+  "keywords": [
+    "optical computing",
+    "diffractive neural networks",
+    "physics-aware training",
+    "angular spectrum method",
+    "nematic liquid crystal",
+    "Alt-Pleshko limit"
+  ]
+}

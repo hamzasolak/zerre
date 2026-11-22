@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZERRE — Optofluidik AI İşlemci</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+
+  <!-- Three.js r128 — LOKAL -->
+  <script src="js/three.min.js"></script>
+  <!-- OrbitControls (Three.js eklentisi) -->
+  <script>
+    // OrbitControls — Three.js r128 uyumlu minimal sürüm (CDN yok, inline)
+    // Kaynak: three.js/examples/js/controls/OrbitControls.js (lisans: MIT)
+    THREE.OrbitControls=(function(){
+      function OrbitControls(object,domElement){
+        this.object=object;this.domElement=domElement;
+        this.enabled=true;this.enableDamping=false;this.dampingFactor=0.05;
+        this.minDistance=0;this.maxDistance=Infinity;this.enablePan=true;
+        var scope=this,EPS=0.000001;
+        var spherical=new THREE.Spherical(),sphericalDelta=new THREE.Spherical();
+        var scale=1,panOffset=new THREE.Vector3(),zoomChanged=false;
+        var rotateStart=new THREE.Vector2(),rotateEnd=new THREE.Vector2(),rotateDelta=new THREE.Vector2();
+        var EPS2=0.000001;
+        var target=new THREE.Vector3(),offset=new THREE.Vector3(),lastPosition=new THREE.Vector3(),lastQuaternion=new THREE.Quaternion();
+        this.target=target;
+        this.maxPolarAngle=Math.PI-EPS2;
+        var quat=new THREE.Quaternion().setFromUnitVectors(object.up,new THREE.Vector3(0,1,0));
+        var quatInverse=quat.clone().invert();
+        var isMouseDown=false;
+        domElement.addEventListener('mousedown',function(e){
+          isMouseDown=true;
+          rotateStart.set(e.clientX,e.clientY);
+        });
+        domElement.addEventListener('mousemove',function(e){
+          if(!isMouseDown)return;
+          rotateEnd.set(e.clientX,e.clientY);
+          rotateDelta.subVectors(rotateEnd,rotateStart).multiplyScalar(0.005);
+          sphericalDelta.theta-=rotateDelta.x;
+          sphericalDelta.phi-=rotateDelta.y;
+          rotateStart.copy(rotateEnd);
+        });
+        domElement.addEventListener('mouseup',function(){isMouseDown=false;});
+        domElement.addEventListener('mouseleave',function(){isMouseDown=false;});
+        domElement.addEventListener('touchstart',function(e){
+          if(e.touches.length===1){isMouseDown=true;rotateStart.set(e.touches[0].clientX,e.touches[0].clientY);}
+        },{passive:true});
+        domElement.addEventListener('touchmove',function(e){
+          if(!isMouseDown||e.touches.length!==1)return;
+          rotateEnd.set(e.touches[0].clientX,e.touches[0].clientY);
+          rotateDelta.subVectors(rotateEnd,rotateStart).multiplyScalar(0.005);
+          sphericalDelta.theta-=rotateDelta.x;sphericalDelta.phi-=rotateDelta.y;
+          rotateStart.copy(rotateEnd);
+        },{passive:true});
+        domElement.addEventListener('touchend',function(){isMouseDown=false;});
+        domElement.addEventListener('wheel',function(e){
+          e.preventDefault();
+          scale*=e.deltaY>0?1.08:0.92;
+        },{passive:false});
+        this.update=function(){
+          var position=scope.object.position;
+          offset.copy(position).sub(target);
+          offset.applyQuaternion(quat);
+          spherical.setFromVector3(offset);
+          if(scope.enableDamping){spherical.theta+=sphericalDelta.theta*scope.dampingFactor;spherical.phi+=sphericalDelta.phi*scope.dampingFactor;}
+          else{spherical.theta+=sphericalDelta.theta;spherical.phi+=sphericalDelta.phi;}
+          spherical.phi=Math.max(EPS,Math.min(scope.maxPolarAngle,spherical.phi));
+          spherical.radius*=scale;
+          spherical.radius=Math.max(scope.minDistance,Math.min(scope.maxDistance,spherical.radius));
+          if(scope.enableDamping){sphericalDelta.theta*=(1-scope.dampingFactor);sphericalDelta.phi*=(1-scope.dampingFactor);}
+          else{sphericalDelta.set(0,0,0);}
+          scale=1;
+          offset.setFromSpherical(spherical);
+          offset.applyQuaternion(quatInverse);
+          position.copy(target).add(offset);
+          scope.object.lookAt(target);
+          return false;
+        };
+        this.dispose=function(){};
+      }
+      return OrbitControls;
+    })();
+  </script>
+
+  <!-- Anime.js 3.2.1 — LOKAL -->
+  <script src="js/anime.min.js"></script>
+
+  <!-- Kendi CSS -->
+  <link rel="stylesheet" href="css/style.css?v=52"/>
+</head>
+
+<body>
+  <!-- ════════════════════════════════════════════════════════
+       ANA UYGULAMA KABI
+  ═════════════════════════════════════════════════════════ -->
+  <div id="app">
+
+    <!-- ╔══════════════════════════════════════════════════╗
+         ║              ÜST ÇUBUK (TOPBAR)                ║
+         ╚══════════════════════════════════════════════════╝ -->
+    <div id="topbar" style="opacity:0;">
+      <!-- Sol: Logo -->
+      <div class="flex items-center gap-3">
+        <!-- Logo SVG -->
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="12" fill="none" stroke="#00f5ff" stroke-width="1"/>
+          <circle cx="14" cy="14" r="8"  fill="none" stroke="#39ff14" stroke-width="0.8" stroke-dasharray="3 2"/>
+          <circle cx="14" cy="14" r="3"  fill="#00f5ff" opacity="0.8"/>
+          <line x1="2" y1="14" x2="26" y2="14" stroke="#00f5ff" stroke-width="0.5" opacity="0.4"/>
+          <line x1="14" y1="2" x2="14" y2="26" stroke="#00f5ff" stroke-width="0.5" opacity="0.4"/>
+        </svg>
+        <span class="font-hud text-neonC text-xs tracking-widest" style="text-shadow:0 0 8px #00f5ff;">
+          ZERRE
+        </span>
+        <span class="font-mono text-xs" style="color:#4a7a8a;">— Optoelektronik Dalga-Optiği İkizi v0.4</span>
+      </div>
+
+      <!-- Orta: Sistem Durumu -->
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2">
+          <span class="status-dot active" id="status-slm"></span>
+          <span class="hud-label">532nm</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="status-dot active"></span>
+          <span class="hud-label">E7 LC</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="status-dot" style="background:#aa44ff;box-shadow:0 0 6px #aa44ff;"></span>
+          <span class="hud-label">405nm</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="status-dot active" id="status-cmos"></span>
+          <span class="hud-label">CMOS</span>
+        </div>
+        <span class="font-hud text-xs" style="color:#39ff14; text-shadow:0 0 8px #39ff14;" id="status-text">STANDBY</span>
+      </div>
+
+      <!-- Sağ: Saat & Uptime -->
+      <div class="flex items-center gap-6">
+        <div class="text-right">
+          <div class="hud-label">SYS CLOCK</div>
+          <div class="font-hud text-xs text-neonC" id="sys-time">--:--:--.--</div>
+        </div>
+        <div class="text-right">
+          <div class="hud-label">UPTIME</div>
+          <div class="font-hud text-xs" style="color:#39ff14;" id="uptime">00:00:00</div>
+        </div>
+        <div class="kbd-indicator text-neonC" id="sim-badge">LC-SIM</div>
+      </div>
+    </div><!-- /topbar -->
+
+
+    <!-- ╔══════════════════════════════════════════════════╗
+         ║           SOL PANEL — GİRİŞ / INPUT            ║
+         ╚══════════════════════════════════════════════════╝ -->
+    <div id="left-panel" class="panel">
+      <div class="corner-deco tl"></div><div class="corner-deco tr"></div>
+      <div class="corner-deco bl"></div><div class="corner-deco br"></div>
+
+      <!-- ── Başlık ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="flex items-center gap-2 mb-1">
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <polygon points="7,1 13,10 1,10" fill="none" stroke="#39ff14" stroke-width="1.2"/>
+            <line x1="7" y1="4" x2="7" y2="8" stroke="#39ff14" stroke-width="1"/>
+          </svg>
+          <span class="hud-title">Optik Giriş Kodlayıcı</span>
+        </div>
+        <div class="hud-label">mSLA 2K LCD / SLM TERMINAL — CH:01</div>
+        <div class="laser-line-ui mt-2" id="laser-line-left" style="opacity:0;"></div>
+      </div>
+
+      <!-- ── mSLA 28×28 Çizim & Metin Giriş Alanı ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="lcd" onclick="ZerreApp.setInputMode('lcd')">◈ mSLA 28×28</button>
+          <button class="mode-tab" data-mode="text" onclick="ZerreApp.setInputMode('text')">⌨ METİN / SLM</button>
+        </div>
+
+        <!-- Sekme 1: 28×28 mSLA LCD Rakam Çizim Matrisi -->
+        <div id="lcd-mode-box">
+          <div class="lcd-pad-wrap">
+            <canvas id="lcd-canvas" width="140" height="140" title="Fareyle rakam çizin"></canvas>
+            <div class="mini-btn-row">
+              <button class="mini-btn" onclick="ZerreApp.clearPad()">TEMİZLE</button>
+              <button class="mini-btn" onclick="ZerreApp.loadSampleDigit(null)">RASTGELE MNIST</button>
+            </div>
+            <div class="digit-grid" title="Gerçek MNIST test örneği yükle">
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(0)">0</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(1)">1</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(2)">2</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(3)">3</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(4)">4</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(5)">5</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(6)">6</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(7)">7</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(8)">8</button>
+              <button class="digit-btn" onclick="ZerreApp.loadSampleDigit(9)">9</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sekme 2: Klasik Metin / SLM Girişi -->
+        <div id="text-mode-box" style="display:none;">
+          <div class="hud-label mb-2">▶ VERİ PAKETİ / UTF-8 STREAM</div>
+          <textarea
+            id="prompt-input"
+            class="terminal-area"
+            rows="5"
+            placeholder="Veriyi buraya girin... (Ctrl+Enter ile gönder)"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="hud-label mt-1 text-right" style="font-size:0.5rem;">Ctrl+Enter → Optik Zinciri Ateşle</div>
+      </div>
+
+      <!-- ── Binary Çıktı ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="hud-label mb-1">◈ BINARY STREAM (8-BİT ASCII)</div>
+        <div class="binary-stream" id="binary-output">— Bekliyor —</div>
+      </div>
+
+      <!-- ── Ateşle Butonu ── -->
+      <div class="ui-card" style="opacity:0;">
+        <button class="btn-fire" id="fire-btn">
+          <span>⚡ LAZER PULSE AKTİF ET</span>
+        </button>
+      </div>
+
+      <!-- ── Kanal Durumu ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="hud-label mb-2">◈ SLM KANAL DURUMU</div>
+        <div id="channel-list">
+          <!-- CH 1 — Kırmızı -->
+          <div class="channel-row">
+            <span class="hud-label" style="width:32px;">CH1</span>
+            <div class="channel-bar-wrap">
+              <div class="channel-bar-fill" style="width:0%;background:linear-gradient(90deg,#ff3366,#ff6688);"></div>
+            </div>
+            <span class="hud-label" style="width:28px; text-align:right; color:#ff3366;">650nm</span>
+          </div>
+          <!-- CH 2 — Yeşil -->
+          <div class="channel-row">
+            <span class="hud-label" style="width:32px;">CH2</span>
+            <div class="channel-bar-wrap">
+              <div class="channel-bar-fill" style="width:0%;background:linear-gradient(90deg,#39ff14,#66ff44);"></div>
+            </div>
+            <span class="hud-label" style="width:28px; text-align:right; color:#39ff14;">532nm</span>
+          </div>
+          <!-- CH 3 — Mavi -->
+          <div class="channel-row">
+            <span class="hud-label" style="width:32px;">CH3</span>
+            <div class="channel-bar-wrap">
+              <div class="channel-bar-fill" style="width:0%;background:linear-gradient(90deg,#0080ff,#00f5ff);"></div>
+            </div>
+            <span class="hud-label" style="width:28px; text-align:right; color:#00f5ff;">405nm</span>
+          </div>
+          <!-- CH 4 — Mor -->
+          <div class="channel-row">
+            <span class="hud-label" style="width:32px;">CH4</span>
+            <div class="channel-bar-wrap">
+              <div class="channel-bar-fill" style="width:0%;background:linear-gradient(90deg,#8800ff,#cc44ff);"></div>
+            </div>
+            <span class="hud-label" style="width:28px; text-align:right; color:#cc44ff;">355nm</span>
+          </div>
+        </div>
+      </div><!-- /kanal -->
+
+      <!-- ── Dalga Barları (EQ) ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="hud-label mb-2">◈ FREKANS SPEKTRUMU</div>
+        <div class="flex gap-1 items-end" style="height:36px;">
+          <!-- 16 adet wave bar -->
+          <div class="wave-bar flex-1" style="height:20%;"></div>
+          <div class="wave-bar flex-1" style="height:50%;"></div>
+          <div class="wave-bar flex-1" style="height:35%;"></div>
+          <div class="wave-bar flex-1" style="height:80%;"></div>
+          <div class="wave-bar flex-1" style="height:60%;"></div>
+          <div class="wave-bar flex-1" style="height:90%;"></div>
+          <div class="wave-bar flex-1" style="height:45%;"></div>
+          <div class="wave-bar flex-1" style="height:70%;"></div>
+          <div class="wave-bar flex-1" style="height:55%;"></div>
+          <div class="wave-bar flex-1" style="height:85%;"></div>
+          <div class="wave-bar flex-1" style="height:40%;"></div>
+          <div class="wave-bar flex-1" style="height:65%;"></div>
+          <div class="wave-bar flex-1" style="height:30%;"></div>
+          <div class="wave-bar flex-1" style="height:75%;"></div>
+          <div class="wave-bar flex-1" style="height:50%;"></div>
+          <div class="wave-bar flex-1" style="height:25%;"></div>
+        </div>
+      </div><!-- /wave bars -->
+
+    </div><!-- /left-panel -->
+
+
+    <!-- ╔══════════════════════════════════════════════════╗
+         ║         MERKEZ SAHNE — THREE.JS                ║
+         ╚══════════════════════════════════════════════════╝ -->
+    <div id="center-stage" class="panel" style="opacity:0;">
+
+      <!-- Three.js renderer buraya eklenir (scene.js içinden) -->
+
+      <!-- Aktif Senaryo ve Optik Sinyal Akışı Şeridi -->
+      <div id="stage-banner">
+        <div id="stage-banner-title">ANA SİSTEM · KÜRESEL KONSEPT</div>
+        <div id="stage-banner-flow">532nm Lazer → LCOS SLM → Kondenser → E7 Küre (6 Eksen ITO + 405nm Pump) → CMOS</div>
+        <div class="pipeline-steps">
+          <span class="pipe-step" id="stage-step-1">① OPTİK KODLAMA</span>
+          <span class="pipe-step" id="stage-step-2">② KIRINIM &amp; LC FAZ</span>
+          <span class="pipe-step" id="stage-step-3">③ CMOS |E|² OKUMA</span>
+        </div>
+      </div>
+
+      <!-- HUD Katmanları -->
+      <div class="scene-hud top-left">
+        <div>HEDEF: MODEL H İKİZİ</div>
+        <div>MOD: ORTAK-YOL KIRINIM</div>
+        <div>DALGA BOYU: λ = 532 nm</div>
+      </div>
+      <div class="scene-hud top-right">
+        <div>DÜZLEMSEL LC (d ≤ 7 µm)</div>
+        <div>İZGARALAR: 128² / 47 µm</div>
+        <div>Z₁ = Z₂ = 5 cm</div>
+      </div>
+      <div class="scene-hud bot-left">
+        <div>⬤ 532nm INPUT  ← [LC-FLASK] →  OUTPUT ⬤</div>
+        <div style="color:#aa44ff;">▲ 405nm PUMP (Freedericksz)</div>
+        <div style="color:#39ff14;">SLM → [E7 LC] → CMOS</div>
+      </div>
+      <div class="scene-hud bot-right">
+        <div>CAM: ORBIT FREE</div>
+        <div>FPS: — </div>
+      </div>
+
+      <!-- Çarpraz çizgi dekor -->
+      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.07;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#00f5ff" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)"/>
+      </svg>
+
+      <!-- Bileşen Etiket Katmanı -->
+      <div id="label-layer"></div>
+      <button id="label-toggle" onclick="ZerreScene.toggleLabels()">ETİKETLER ⊙</button>
+
+      <!-- ── Elektrot Öneri Seçici ── -->
+      <div id="proposal-panel">
+        <button class="prop-btn active" onclick="ZerreScene.setProposal(0)">⬤ ANA SİSTEM</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(1)">A · DIŞ KAFES · 32</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(2)">B · PLAKA · 256</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(3)">C · YARI-KÜRE · 64</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(4)">D · TEK PLAKA · DETAYLI</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(5)">E · D²NN · 3 KATMAN</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(6)">F · FOTODİOD</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(7)">G · ITO MATRİS</button>
+        <button class="prop-btn"        onclick="ZerreScene.setProposal(8)">H · OPTİMUM MVP ★</button>
+      </div>
+
+      <!-- ── Aktif Öneri Bilgi Kartı ── -->
+      <div id="proposal-info" style="opacity:0; pointer-events:none;">
+
+        <!-- Kart A -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ A — Dış Kafes Dizisi</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Elektrot Sayısı</span>
+            <span class="prop-info-val v-cyan">32 — Fibonacci Dizilimi</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Malzeme</span>
+            <span class="prop-info-val">ITO Kaplı Cam Çubuk</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Uzaklık</span>
+            <span class="prop-info-val">r = 2.85 (küre dışı)</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Avantaj</span>
+            <span class="prop-info-val v-green">Küreyi değiştirmez</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Alan Verimliliği</span>
+            <span class="prop-info-val v-orange">~%40 (hava boşluğu)</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Üretim</span>
+            <span class="prop-info-val v-green">Hemen uygulanabilir</span>
+          </div>
+        </div>
+
+        <!-- Kart B -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ B — Düzlem Paralel Plaka</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Elektrot Sayısı</span>
+            <span class="prop-info-val v-cyan">256 — 16×16 Matris</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Teknoloji</span>
+            <span class="prop-info-val">ITO Sputter · LCD Fabrikasyonu</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">LC Boşluğu</span>
+            <span class="prop-info-val">7 mm — Glass Spacer</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Avantaj</span>
+            <span class="prop-info-val v-green">Üretilebilir · Test edilmiş</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Dezavantaj</span>
+            <span class="prop-info-val v-orange">3D optik kaos azalır</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Hedef</span>
+            <span class="prop-info-val v-green">Faz 1 prototip</span>
+          </div>
+        </div>
+
+        <!-- Kart C -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ C — Yarı-Küre Kase</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Elektrot Sayısı</span>
+            <span class="prop-info-val v-cyan">64 — 8×8 Alt Matris</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Çerçeve</span>
+            <span class="prop-info-val">Flex PCB Şerit</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Üst Referans</span>
+            <span class="prop-info-val">Düz ITO Cam</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Avantaj</span>
+            <span class="prop-info-val v-green">3D + Piksel Hibrit</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Optik Kaos</span>
+            <span class="prop-info-val v-green">Korunuyor</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Hedef</span>
+            <span class="prop-info-val v-green">Faz 2 — En iyi uzlaşma</span>
+          </div>
+        </div>
+
+        <!-- Kart D -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ D — Tek Plaka Detaylı</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Alt Cam</span>
+            <span class="prop-info-val v-cyan">Borofloat 33 · 70×70×1.1mm</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">ITO Kaplama</span>
+            <span class="prop-info-val v-cyan">100nm Sputter · 16×16 Matris</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">LC Katmanı</span>
+            <span class="prop-info-val v-green">Merck E7 · 7μm · Δn=0.225</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Hizalama</span>
+            <span class="prop-info-val">Nissan SE-7492 · 50nm PI</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Spacer</span>
+            <span class="prop-info-val">SiO₂ Boncuk · Ø7μm</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Sürücü</span>
+            <span class="prop-info-val v-copper">ESP32 + MCP4728×4 · I²C</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Maliyet</span>
+            <span class="prop-info-val v-green">∼300 USD · Faz 1</span>
+          </div>
+        </div>
+
+        <!-- Kart E -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ E — Çok Katmanlı D²NN</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Katman Sayısı</span>
+            <span class="prop-info-val v-cyan">3 × LC Plaka · 256 px/kat</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Fresnel Aralık</span>
+            <span class="prop-info-val">30mm · z=d²/λ · λ=532nm</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Toplam Piksel</span>
+            <span class="prop-info-val v-cyan">768 Bağımsız Ağırlık</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Giriş</span>
+            <span class="prop-info-val">532nm Nd:YAG · SLM Maskel</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Hedef Görev</span>
+            <span class="prop-info-val v-green">CIFAR-10 · %80+ Doğruluk</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Eğitim</span>
+            <span class="prop-info-val">Pertürbasyon · Donanım</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Maliyet</span>
+            <span class="prop-info-val v-green">∼700 USD · Faz 2</span>
+          </div>
+        </div>
+
+        <!-- Kart F -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ F — Fotodiod Adreslemeli Küre</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Adres Yöntemi</span>
+            <span class="prop-info-val v-violet">805nm IR Galvo · Dış Yüzey → 32 Si Diyot</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Galvo Hızı</span>
+            <span class="prop-info-val v-green">32 px → 3.2ms · LC(50ms) hâlâ yavaş</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Faz 2 Alternatif</span>
+            <span class="prop-info-val v-cyan">VCSEL ×32 · Paralel · Hareketli Parça Yok</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Fotodiod</span>
+            <span class="prop-info-val v-violet">Si · ×4 Seri · ~2V_oc · 805nm · ×32</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Hold Sorunu</span>
+            <span class="prop-info-val v-orange">Lazer geçince V düşer → LC kararsız</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Çözüm</span>
+            <span class="prop-info-val v-green">10nF tutaç kap. · τ=500ms · LC=10ms</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">ITO Yama</span>
+            <span class="prop-info-val v-cyan">İç Yüzey · 100nm · Per Fotodiod</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">GND</span>
+            <span class="prop-info-val v-green">Alt Yarım Küre · Homojen ITO</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Sinyal Lazeri</span>
+            <span class="prop-info-val v-green">532nm Nd:YAG · Alttan · Veri Işını</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Avantaj</span>
+            <span class="prop-info-val v-green">Tel Yok · Kablosuz LC Sürücü</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Hedef</span>
+            <span class="prop-info-val v-cyan">Faz 3 — Devre-Dışı Kontrol</span>
+          </div>
+        </div>
+
+        <!-- Kart G -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ G — ITO Izgara Matrisi</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Grid Boyutu</span>
+            <span class="prop-info-val v-cyan">16×16 = 256 Piksel · 32 Hat</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">LC Kontrol</span>
+            <span class="prop-info-val v-violet">Doğrudan Elektrik · ITO Kesiştirme</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Güncelleme</span>
+            <span class="prop-info-val v-green">~40μs · 32 Kanal Paralel SPI</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">DAC</span>
+            <span class="prop-info-val v-cyan">AD5370 · 40 Kanal · 16-bit · ±10V</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">MCU</span>
+            <span class="prop-info-val">STM32F4 · USB-CDC · JSON API</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Crosstalk</span>
+            <span class="prop-info-val v-orange">%5 → 1/4 Bias ile %0.5</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Maks Grid (DIY)</span>
+            <span class="prop-info-val v-green">32×32 = 1.024 px · El Yapımı</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Maks Grid (PCB)</span>
+            <span class="prop-info-val v-cyan">64×64 = 4.096 px · Lazer Kesim</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Eğitim</span>
+            <span class="prop-info-val v-green">SPSA · δ(256) · 205μs transfer</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Maliyet</span>
+            <span class="prop-info-val v-green">~350 USD · Faz 2 MVP</span>
+          </div>
+        </div>
+
+        <!-- Kart H — Optimum MVP (Sentez v0.2) -->
+        <div class="prop-info-card" style="display:none;">
+          <div class="prop-info-title">ÖNERİ H — Optimum MVP ★ Sentez</div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Konsept</span>
+            <span class="prop-info-val v-cyan">İnce Hücre + mSLA Giriş · Ortak-Yol Hibrit</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Giriş (SLM Yerine)</span>
+            <span class="prop-info-val v-green">mSLA 2K Mono LCD 5.5" · ~40 USD · 60Hz HDMI</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Ağırlık Katmanı</span>
+            <span class="prop-info-val v-cyan">Aktif ITO/PWM veya 2. mSLA TFT-LCD (Sıfır Crosstalk)</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Alt-Pleshko Notu</span>
+            <span class="prop-info-val v-orange">Pasif 16×16 RMS oranı ≤1.29 → Aktif Sürüş Şart</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Okuma</span>
+            <span class="prop-info-val v-cyan">RPi Cam3 12MP · |E|² + Hibrit MLP Kafa</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Eğitim</span>
+            <span class="prop-info-val v-violet">PAT (Wirtinger Adjoint / PyTorch) + SPSA Yedek</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Neden Küre Yok</span>
+            <span class="prop-info-val v-orange">Nematik saçılma 15–40 dB/cm · 7μm'de sorun yok</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Simülasyon</span>
+            <span class="prop-info-val v-green">MNIST %94,37 ± 0,84 (3 tohum, sim.)</span>
+          </div>
+          <div class="prop-info-row">
+            <span class="prop-info-key">Maliyet</span>
+            <span class="prop-info-val v-green">784–959 USD (%25 pay dahil)</span>
+          </div>
+        </div>
+
+      </div><!-- /proposal-info -->
+
+      <!-- Processing Durumu Rozeti (Sahneyi kapatmadan üstte görünür) -->
+      <div id="processing-overlay">
+        <div class="spinner-ring"></div>
+        <div class="font-hud" style="font-size:0.54rem; color:#39ff14; letter-spacing:0.18em;">
+          OPTİK HESAPLAMA AKTİF
+        </div>
+      </div>
+    </div><!-- /center-stage -->
+
+
+    <!-- ╔══════════════════════════════════════════════════╗
+         ║          SAĞ PANEL — ÇIKIŞ / OUTPUT            ║
+         ╚══════════════════════════════════════════════════╝ -->
+    <div id="right-panel" class="panel">
+      <div class="corner-deco tl"></div><div class="corner-deco tr"></div>
+      <div class="corner-deco bl"></div><div class="corner-deco br"></div>
+
+      <!-- ── Başlık ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="flex items-center gap-2 mb-1">
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <rect x="1" y="1" width="12" height="12" rx="1" fill="none" stroke="#00f5ff" stroke-width="1.2"/>
+            <rect x="3" y="3" width="8"  height="4" rx="0.5" fill="#00f5ff" opacity="0.3"/>
+            <rect x="3" y="9" width="5"  height="2" rx="0.5" fill="#39ff14" opacity="0.5"/>
+          </svg>
+          <span class="hud-title">CMOS Sensör & Optik Alan</span>
+        </div>
+        <div class="hud-label">ASM DALGA YAYILIMI — CANLI YAKALAMA</div>
+        <div class="laser-line-ui mt-2" id="laser-line-right" style="opacity:0; transform-origin:right;"></div>
+      </div>
+
+      <!-- ── Speckle Pattern / ASM Alan Haritası ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="flex justify-between items-center mb-2">
+          <span class="hud-label">◈ OPTİK DÜZLEM</span>
+          <div class="flex gap-1">
+            <button class="mini-btn speckle-view-btn active" onclick="ZerreApp.setSpeckleView('cmos', this)">CMOS |E|²</button>
+            <button class="mini-btn speckle-view-btn" onclick="ZerreApp.setSpeckleView('diffract', this)">Z₁ ALAN</button>
+            <button class="mini-btn speckle-view-btn" onclick="ZerreApp.setSpeckleView('phase', this)">ITO Δφ</button>
+          </div>
+        </div>
+        <canvas id="speckle-canvas"></canvas>
+        <div class="flex justify-between mt-1">
+          <span class="hud-label">SINIF GÜVENİ (SOFTMAX)</span>
+          <span class="font-mono text-xs" style="color:#39ff14;" id="speckle-corr">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="hud-label">OKUMA ÇÖZÜNÜRLÜĞÜ</span>
+          <span class="font-mono text-xs" style="color:#00f5ff;">32×32 CMOS |E|²</span>
+        </div>
+      </div>
+
+      <!-- ── Decoded Text ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="hud-label mb-2">◈ DECODED OUTPUT</div>
+        <div class="decoded-output glitch-target" id="decoded-output">
+          [ Sinyal bekleniyor... ]
+        </div>
+      </div>
+
+      <!-- ── Metrikler: Sıcaklık + Güç ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="hud-label mb-3">◈ SİSTEM METRİKLERİ</div>
+        <div class="flex justify-around">
+
+          <!-- Sıcaklık Gauge -->
+          <div class="gauge-ring text-center">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <!-- Arka halka -->
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#0d1a26" stroke-width="5"/>
+              <!-- Dolgu halkası -->
+              <circle id="gauge-temp" cx="36" cy="36" r="28"
+                fill="none" stroke="#ff6600" stroke-width="5"
+                stroke-linecap="round"
+                transform="rotate(-90 36 36)"
+                style="stroke-dasharray:176; stroke-dashoffset:176; transition:stroke-dashoffset 0.5s;"/>
+              <!-- Merkez metin -->
+              <text x="36" y="33" text-anchor="middle" font-family="Orbitron" font-size="7" fill="#ff8833" font-weight="700">TEMP</text>
+              <text x="36" y="44" text-anchor="middle" font-family="Orbitron" font-size="5.5" fill="#e0f7ff" id="temp-value">25°C</text>
+            </svg>
+          </div>
+
+          <!-- Güç Gauge -->
+          <div class="gauge-ring text-center">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#0d1a26" stroke-width="5"/>
+              <circle id="gauge-power" cx="36" cy="36" r="28"
+                fill="none" stroke="#00f5ff" stroke-width="5"
+                stroke-linecap="round"
+                transform="rotate(-90 36 36)"
+                style="stroke-dasharray:176; stroke-dashoffset:176; transition:stroke-dashoffset 0.5s;"/>
+              <text x="36" y="33" text-anchor="middle" font-family="Orbitron" font-size="7" fill="#00aacc" font-weight="700">POWER</text>
+              <text x="36" y="44" text-anchor="middle" font-family="Orbitron" font-size="5.5" fill="#e0f7ff" id="power-value">0.10 W</text>
+            </svg>
+          </div>
+
+          <!-- Frekans Göstergesi -->
+          <div class="gauge-ring text-center">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#0d1a26" stroke-width="5"/>
+              <circle cx="36" cy="36" r="28"
+                fill="none" stroke="#8800ff" stroke-width="5"
+                stroke-linecap="round"
+                transform="rotate(-90 36 36)"
+                style="stroke-dasharray:176; stroke-dashoffset:120;"/>
+              <text x="36" y="33" text-anchor="middle" font-family="Orbitron" font-size="7" fill="#aa44ff" font-weight="700">FREQ</text>
+              <text x="36" y="44" text-anchor="middle" font-family="Orbitron" font-size="5.5" fill="#e0f7ff" id="freq-value">563.5 THz</text>
+            </svg>
+          </div>
+        </div><!-- /gauges flex -->
+      </div><!-- /metrikler -->
+
+      <!-- ── İşlem Logu ── -->
+      <div class="ui-card" style="opacity:0; flex:1;">
+        <div class="hud-label mb-2">◈ PROCESS LOG</div>
+        <div id="process-log"
+          style="font-family:'Share Tech Mono',monospace; font-size:0.6rem; color:#4a7a8a;
+                 line-height:1.8; min-height:80px; overflow-y:auto;
+                 padding:4px; background:#00000040; border-radius:4px;
+                 border:1px solid #00f5ff11;">
+          <div style="color:#00f5ff88;">[ Sistem başlatılıyor... ]</div>
+        </div>
+      </div>
+
+      <!-- ── Hızlı İstatistikler ── -->
+      <div class="ui-card" style="opacity:0;">
+        <div class="hud-label mb-2">◈ OTURUM İSTATİSTİKLERİ</div>
+        <div class="grid grid-cols-2 gap-2">
+          <div style="background:#00000040; border:1px solid #00f5ff11; border-radius:4px; padding:6px;">
+            <div class="hud-label">İŞLEM</div>
+            <div class="metric-value" id="stat-count" style="font-size:1rem;">0</div>
+          </div>
+          <div style="background:#00000040; border:1px solid #00f5ff11; border-radius:4px; padding:6px;">
+            <div class="hud-label">CPU SİMÜLASYON</div>
+            <div class="metric-value" id="stat-latency" style="font-size:1rem; color:#39ff14;">0ms</div>
+          </div>
+          <div style="background:#00000040; border:1px solid #0080ff22; border-radius:4px; padding:6px;">
+            <div class="hud-label">DALGA BOYU</div>
+            <div class="metric-value" style="font-size:1rem; color:#0080ff;">532 nm</div>
+          </div>
+          <div style="background:#00000040; border:1px solid #8800ff22; border-radius:4px; padding:6px;">
+            <div class="hud-label">PİKSEL ADIMI</div>
+            <div class="metric-value" style="font-size:1rem; color:#aa44ff;">47 µm</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right-panel -->
+
+  </div><!-- /app -->
+
+  <!-- ─────────────────────────────────────────────────────
+       Kendi JS Modülleri — Sırayla yükle
+  ───────────────────────────────────────────────────────── -->
+  <!-- cache-buster: v52 -->
+  <script>
+    window.onerror = function(msg, src, line) {
+      var d = document.getElementById('__err_overlay');
+      if (!d) {
+        d = document.createElement('div');
+        d.id = '__err_overlay';
+        d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;font:11px monospace;padding:6px;z-index:99999;white-space:pre-wrap;';
+        document.body.appendChild(d);
+      }
+      d.textContent += '[HATA] ' + msg + ' (' + (src||'').split('/').pop() + ':' + line + ')\n';
+    };
+  </script>
+  <script src="js/scene-hardware.js?v=52"></script>
+  <script src="js/scene-ito.js?v=52"></script>
+  <script src="js/scene-proposals.js?v=52"></script>
+  <script src="js/scene.js?v=52"></script>
+  <script src="js/speckle.js?v=52"></script>
+  <script src="js/ui.js?v=52"></script>
+  <script src="js/app.js?v=52"></script>
+
+  <!-- ─────────────────────────────────────────────────────
+       Ek: Sahne FPS Sayacı
+  ───────────────────────────────────────────────────────── -->
+  <script>
+    let _fpsFrames = 0, _fpsLast = performance.now();
+    function _countFPS() {
+      _fpsFrames++;
+      const now = performance.now();
+      if (now - _fpsLast >= 1000) {
+        const fpsTxt = document.querySelector('.scene-hud.bot-right div:last-child');
+        if (fpsTxt) fpsTxt.textContent = 'FPS: ' + _fpsFrames;
+        _fpsFrames = 0;
+        _fpsLast = now;
+      }
+      requestAnimationFrame(_countFPS);
+    }
+    requestAnimationFrame(_countFPS);
+  </script>
+
+</body>
+</html>
+
+
+
+

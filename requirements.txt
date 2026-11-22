@@ -1,0 +1,8 @@
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.8
+pillow>=10.0
+reportlab>=4.0
+
+# Optional PyTorch wrapper (zerre_pat_torch.py):
+# torch>=2.0

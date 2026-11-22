@@ -1,0 +1,809 @@
+{
+  "environment_info": {
+    "python": "3.11.9",
+    "numpy": "2.2.3",
+    "scipy": "1.17.1",
+    "os": "Windows-10-10.0.26300-SP0",
+    "processor": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+    "seeds": [
+      7,
+      19,
+      42
+    ],
+    "total_runtime_s": 51647.7
+  },
+  "physics_checks": {
+    "grad_check_eps": 1e-06,
+    "grad_err_active": 5.5194e-07,
+    "grad_err_passive": 7.4614e-07,
+    "alt_pleshko_n16_ratio": 1.290994,
+    "alt_pleshko_n32_ratio": 1.195606,
+    "phase_swing_active_rad": 4.86,
+    "phase_swing_passive_n16_rad": 0.921,
+    "phase_swing_passive_n32_rad": 0.753
+  },
+  "table1_ablation": {
+    "config": {
+      "n_train": 3000,
+      "n_fit": 2640,
+      "n_val": 360,
+      "n_test": 1000,
+      "cam_n": 8,
+      "grid": 128,
+      "seed": 7
+    },
+    "rows": [
+      {
+        "key": "digital_area_linear",
+        "label": "1. Dijital Alan Havuzlama (Optik Yok) + Lineer",
+        "opt_w": 0,
+        "dig_w": 650,
+        "mean": 81.27,
+        "std": 0.55,
+        "values": [
+          81.0,
+          81.9,
+          80.9
+        ]
+      },
+      {
+        "key": "digital_pca_linear",
+        "label": "2. Dijital PCA-64 (Optik Yok) + Lineer",
+        "opt_w": 0,
+        "dig_w": 650,
+        "mean": 83.97,
+        "std": 1.29,
+        "values": [
+          84.9,
+          84.5,
+          82.5
+        ]
+      },
+      {
+        "key": "free_space_linear",
+        "label": "3. Yalnız Serbest Uzay Kırınımı (LC Yok) + Lineer",
+        "opt_w": 0,
+        "dig_w": 650,
+        "mean": 68.57,
+        "std": 0.95,
+        "values": [
+          67.6,
+          68.6,
+          69.5
+        ]
+      },
+      {
+        "key": "passive_16_random_linear",
+        "label": "4. Pasif Matris 16×16 (Rastgele, Kusurlu) + Lineer",
+        "opt_w": 256,
+        "dig_w": 650,
+        "mean": 69.0,
+        "std": 0.4,
+        "values": [
+          69.4,
+          69.0,
+          68.6
+        ]
+      },
+      {
+        "key": "active_16_random_linear",
+        "label": "5. Aktif Matris 16×16 (Rastgele, Kusurlu) + Lineer",
+        "opt_w": 256,
+        "dig_w": 650,
+        "mean": 67.43,
+        "std": 0.85,
+        "values": [
+          67.1,
+          68.4,
+          66.8
+        ]
+      },
+      {
+        "key": "active_32_random_linear",
+        "label": "6. 2. LCD 32×32 Aktif (Rastgele, Kusurlu) + Lineer",
+        "opt_w": 1024,
+        "dig_w": 650,
+        "mean": 67.77,
+        "std": 0.4,
+        "values": [
+          68.2,
+          67.7,
+          67.4
+        ]
+      },
+      {
+        "key": "passive_16_pat_linear",
+        "label": "7. Pasif Matris 16×16 + PAT (Kusurlu) + Lineer",
+        "opt_w": 256,
+        "dig_w": 650,
+        "mean": 73.53,
+        "std": 2.04,
+        "values": [
+          74.0,
+          75.3,
+          71.3
+        ]
+      },
+      {
+        "key": "active_16_pat_linear",
+        "label": "8. Aktif Matris 16×16 + PAT (Kusurlu) + Lineer",
+        "opt_w": 256,
+        "dig_w": 650,
+        "mean": 74.13,
+        "std": 0.75,
+        "values": [
+          75.0,
+          73.7,
+          73.7
+        ]
+      },
+      {
+        "key": "active_32_pat_linear",
+        "label": "9. 2. LCD 32×32 Aktif + PAT (Kusurlu) + Lineer",
+        "opt_w": 1024,
+        "dig_w": 650,
+        "mean": 77.57,
+        "std": 2.22,
+        "values": [
+          78.8,
+          78.9,
+          75.0
+        ]
+      },
+      {
+        "key": "digital_area_mlp",
+        "label": "10. Dijital Alan Havuzlama (Optik Yok) + MLP",
+        "opt_w": 0,
+        "dig_w": 19210,
+        "mean": 91.6,
+        "std": 1.25,
+        "values": [
+          92.8,
+          91.7,
+          90.3
+        ]
+      },
+      {
+        "key": "active_32_pat_mlp",
+        "label": "11. 2. LCD 32×32 Aktif + PAT + Hibrit MLP",
+        "opt_w": 1024,
+        "dig_w": 19210,
+        "mean": 84.53,
+        "std": 1.47,
+        "values": [
+          86.2,
+          84.0,
+          83.4
+        ]
+      }
+    ]
+  },
+  "table2_scaling": {
+    "config": {
+      "n_train": 6000,
+      "n_fit": 5280,
+      "n_val": 720,
+      "n_test": 1000,
+      "grid": 128,
+      "seeds": [
+        7,
+        19,
+        42
+      ]
+    },
+    "rows": [
+      {
+        "key": "raw_28x28_ridge",
+        "label": "Ham 28×28 (Optik Yok) + Ridge",
+        "opt_w": 0,
+        "dig_w": 7850,
+        "mean": 82.93,
+        "std": 1.7,
+        "values": [
+          83.6,
+          84.2,
+          81.0
+        ]
+      },
+      {
+        "key": "raw_28x28_mlp",
+        "label": "Ham 28×28 (Optik Yok) + MLP (256)",
+        "opt_w": 0,
+        "dig_w": 203530,
+        "mean": 93.93,
+        "std": 0.99,
+        "values": [
+          94.4,
+          94.6,
+          92.8
+        ]
+      },
+      {
+        "key": "opt_16_256f_ridge_2500",
+        "label": "16×16 Aktif (Rastgele) + 16×16 Ridge (N=2500)",
+        "opt_w": 256,
+        "dig_w": 2570,
+        "mean": 81.73,
+        "std": 0.72,
+        "values": [
+          82.1,
+          82.2,
+          80.9
+        ]
+      },
+      {
+        "key": "opt_16_1024f_ridge_2500",
+        "label": "16×16 Aktif (Rastgele) + 32×32 Ridge (N=2500)",
+        "opt_w": 256,
+        "dig_w": 10250,
+        "mean": 84.77,
+        "std": 1.0,
+        "values": [
+          84.4,
+          85.9,
+          84.0
+        ]
+      },
+      {
+        "key": "opt_32_1024f_ridge_6000",
+        "label": "32×32 Aktif (Rastgele) + 32×32 Ridge (N=6000)",
+        "opt_w": 1024,
+        "dig_w": 10250,
+        "mean": 85.57,
+        "std": 1.76,
+        "values": [
+          86.1,
+          87.0,
+          83.6
+        ]
+      },
+      {
+        "key": "opt_32_random_mlp_6000",
+        "label": "32×32 Aktif (Rastgele) + 32×32 MLP (N=6000)",
+        "opt_w": 1024,
+        "dig_w": 264970,
+        "mean": 94.2,
+        "std": 0.95,
+        "values": [
+          94.7,
+          94.8,
+          93.1
+        ]
+      },
+      {
+        "key": "opt_32_pat_perturbed_mlp_6000",
+        "label": "32×32 Aktif + PAT + MLP (Kusurlu Sistem)",
+        "opt_w": 1024,
+        "dig_w": 264970,
+        "mean": 89.77,
+        "std": 3.27,
+        "values": [
+          90.8,
+          92.4,
+          86.1
+        ]
+      },
+      {
+        "key": "opt_32_pat_nominal_mlp_6000",
+        "label": "32×32 Aktif + PAT + MLP (Kalibre İkiz)",
+        "opt_w": 1024,
+        "dig_w": 264970,
+        "mean": 94.37,
+        "std": 0.84,
+        "values": [
+          94.8,
+          94.9,
+          93.4
+        ]
+      }
+    ]
+  },
+  "latency_cpu": {
+    "n_runs": 50,
+    "median_ms": 0.78,
+    "mean_ms": 0.87,
+    "iqr_ms": 0.08,
+    "min_ms": 0.71,
+    "max_ms": 2.74
+  },
+  "robustness": {
+    "n_test": 1000,
+    "seed": 7,
+    "grid": 128,
+    "base_acc": 94.8,
+    "lcd_shifts_um": {
+      "0": 94.8,
+      "47": 94.0,
+      "94": 89.0,
+      "188": 68.2
+    },
+    "ito_shifts_um": {
+      "0": 94.8,
+      "47": 95.0,
+      "94": 94.8,
+      "188": 94.1
+    },
+    "cam_shifts_um": {
+      "0": 94.8,
+      "47": 94.0,
+      "94": 87.9,
+      "188": 68.3
+    },
+    "axial_dz1_mm": {
+      "0.0": 94.8,
+      "1.0": 94.9,
+      "3.0": 95.1,
+      "8.0": 94.7
+    },
+    "combined_47um_1mm": 87.9
+  },
+  "robustness_perturbed_head": {
+    "n_test": 1000,
+    "seed": 7,
+    "grid": 128,
+    "base_acc": 87.8,
+    "lcd_shifts_um": {
+      "0": 87.8,
+      "47": 89.5,
+      "94": 88.0,
+      "188": 75.4
+    },
+    "ito_shifts_um": {
+      "0": 87.8,
+      "47": 87.6,
+      "94": 87.7,
+      "188": 88.5
+    },
+    "cam_shifts_um": {
+      "0": 87.8,
+      "47": 89.4,
+      "94": 87.8,
+      "188": 77.3
+    },
+    "axial_dz1_mm": {
+      "0.0": 87.8,
+      "1.0": 87.7,
+      "3.0": 87.8,
+      "8.0": 87.4
+    },
+    "combined_47um_1mm": 88.1
+  },
+  "environment_tests": {
+    "n_test": 1000,
+    "seed": 7,
+    "base_acc": 94.8,
+    "temps": [
+      {
+        "temp_c": 20,
+        "scale": 1.0306,
+        "acc": 94.8
+      },
+      {
+        "temp_c": 25,
+        "scale": 1.0,
+        "acc": 94.8
+      },
+      {
+        "temp_c": 30,
+        "scale": 0.9656,
+        "acc": 94.8
+      },
+      {
+        "temp_c": 35,
+        "scale": 0.9262,
+        "acc": 94.9
+      },
+      {
+        "temp_c": 45,
+        "scale": 0.8227,
+        "acc": 94.6
+      },
+      {
+        "temp_c": 55,
+        "scale": 0.6245,
+        "acc": 92.2
+      }
+    ],
+    "stray_light": [
+      {
+        "leak_pct": 0,
+        "raw_acc": 94.8,
+        "dark_sub_acc": 94.8
+      },
+      {
+        "leak_pct": 1,
+        "raw_acc": 68.3,
+        "dark_sub_acc": 94.8
+      },
+      {
+        "leak_pct": 5,
+        "raw_acc": 11.4,
+        "dark_sub_acc": 94.3
+      },
+      {
+        "leak_pct": 20,
+        "raw_acc": 7.7,
+        "dark_sub_acc": 88.5
+      },
+      {
+        "leak_pct": 50,
+        "raw_acc": 7.7,
+        "dark_sub_acc": 78.4
+      }
+    ],
+    "laser_drift": [
+      {
+        "eps": 0.02,
+        "acc": 94.8
+      },
+      {
+        "eps": 0.05,
+        "acc": 95.0
+      },
+      {
+        "eps": 0.1,
+        "acc": 94.9
+      },
+      {
+        "eps": -0.1,
+        "acc": 94.7
+      }
+    ],
+    "combined_30C_1pct_2pct": {
+      "raw_acc": 69.7,
+      "dark_sub_acc": 95.0
+    }
+  },
+  "quantization": [
+    {
+      "bits": 64,
+      "label": "Float64",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 12,
+      "label": "12-bit (4096 lvls)",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 8,
+      "label": "8-bit (256 lvls)",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 6,
+      "label": "6-bit (64 lvls)",
+      "ptq_acc": 94.8
+    },
+    {
+      "bits": 5,
+      "label": "5-bit (32 lvls)",
+      "ptq_acc": 94.9
+    },
+    {
+      "bits": 4,
+      "label": "4-bit (16 lvls)",
+      "ptq_acc": 94.9
+    },
+    {
+      "bits": 3,
+      "label": "3-bit (8 lvls)",
+      "ptq_acc": 94.6
+    },
+    {
+      "bits": 2,
+      "label": "2-bit (4 lvls)",
+      "ptq_acc": 92.9
+    }
+  ],
+  "black_matrix": [
+    {
+      "fill_factor_pct": 100,
+      "uncal_acc": 91.4,
+      "head_recalibrated_acc": 91.4
+    },
+    {
+      "fill_factor_pct": 75,
+      "uncal_acc": 91.1,
+      "head_recalibrated_acc": 92.9
+    },
+    {
+      "fill_factor_pct": 56,
+      "uncal_acc": 90.7,
+      "head_recalibrated_acc": 92.0
+    },
+    {
+      "fill_factor_pct": 36,
+      "uncal_acc": 90.3,
+      "head_recalibrated_acc": 92.3
+    },
+    {
+      "fill_factor_pct": 25,
+      "uncal_acc": 90.7,
+      "head_recalibrated_acc": 92.3
+    }
+  ],
+  "zernike_multiseed": [
+    {
+      "pv_waves": 0.0,
+      "uncompensated": {
+        "mean": 78.73,
+        "std": 2.14,
+        "values": [
+          77.5,
+          81.2,
+          77.5
+        ]
+      },
+      "head_only": {
+        "mean": 78.73,
+        "std": 2.14,
+        "values": [
+          77.5,
+          81.2,
+          77.5
+        ]
+      },
+      "pat_compensated": {
+        "mean": 78.73,
+        "std": 2.14,
+        "values": [
+          77.5,
+          81.2,
+          77.5
+        ]
+      }
+    },
+    {
+      "pv_waves": 1.0,
+      "uncompensated": {
+        "mean": 78.03,
+        "std": 2.17,
+        "values": [
+          77.2,
+          80.5,
+          76.4
+        ]
+      },
+      "head_only": {
+        "mean": 78.63,
+        "std": 2.05,
+        "values": [
+          77.4,
+          81.0,
+          77.5
+        ]
+      },
+      "pat_compensated": {
+        "mean": 78.5,
+        "std": 2.38,
+        "values": [
+          77.6,
+          81.2,
+          76.7
+        ]
+      }
+    },
+    {
+      "pv_waves": 3.0,
+      "uncompensated": {
+        "mean": 77.2,
+        "std": 1.97,
+        "values": [
+          76.6,
+          79.4,
+          75.6
+        ]
+      },
+      "head_only": {
+        "mean": 78.17,
+        "std": 1.69,
+        "values": [
+          77.4,
+          80.1,
+          77.0
+        ]
+      },
+      "pat_compensated": {
+        "mean": 78.1,
+        "std": 2.01,
+        "values": [
+          77.2,
+          80.4,
+          76.7
+        ]
+      }
+    },
+    {
+      "pv_waves": 6.0,
+      "uncompensated": {
+        "mean": 76.23,
+        "std": 2.14,
+        "values": [
+          76.7,
+          78.1,
+          73.9
+        ]
+      },
+      "head_only": {
+        "mean": 77.9,
+        "std": 1.14,
+        "values": [
+          77.4,
+          79.2,
+          77.1
+        ]
+      },
+      "pat_compensated": {
+        "mean": 77.5,
+        "std": 2.1,
+        "values": [
+          76.0,
+          79.9,
+          76.6
+        ]
+      }
+    },
+    {
+      "pv_waves": 10.0,
+      "uncompensated": {
+        "mean": 71.3,
+        "std": 4.78,
+        "values": [
+          73.6,
+          74.5,
+          65.8
+        ]
+      },
+      "head_only": {
+        "mean": 77.53,
+        "std": 1.46,
+        "values": [
+          76.5,
+          79.2,
+          76.9
+        ]
+      },
+      "pat_compensated": {
+        "mean": 76.7,
+        "std": 2.36,
+        "values": [
+          74.7,
+          79.3,
+          76.1
+        ]
+      }
+    },
+    {
+      "pv_waves": 15.0,
+      "uncompensated": {
+        "mean": 65.27,
+        "std": 7.67,
+        "values": [
+          71.5,
+          67.6,
+          56.7
+        ]
+      },
+      "head_only": {
+        "mean": 76.67,
+        "std": 1.15,
+        "values": [
+          75.5,
+          77.8,
+          76.7
+        ]
+      },
+      "pat_compensated": {
+        "mean": 77.3,
+        "std": 1.82,
+        "values": [
+          76.3,
+          79.4,
+          76.2
+        ]
+      }
+    }
+  ],
+  "fashion_mnist_multiseed": {
+    "no_optics_8x8_linear": {
+      "mean": 74.0,
+      "std": 1.97,
+      "values": [
+        76.2,
+        72.4,
+        73.4
+      ]
+    },
+    "no_optics_8x8_mlp": {
+      "mean": 81.47,
+      "std": 1.8,
+      "values": [
+        83.2,
+        79.6,
+        81.6
+      ]
+    },
+    "random_32x32_8x8_linear": {
+      "mean": 61.83,
+      "std": 0.72,
+      "values": [
+        62.3,
+        61.0,
+        62.2
+      ]
+    },
+    "pat_32x32_8x8_linear": {
+      "mean": 71.63,
+      "std": 1.59,
+      "values": [
+        72.7,
+        69.8,
+        72.4
+      ]
+    },
+    "pat_32x32_8x8_mlp": {
+      "mean": 77.53,
+      "std": 1.19,
+      "values": [
+        78.5,
+        76.2,
+        77.9
+      ]
+    },
+    "no_optics_raw_ridge": {
+      "mean": 79.07,
+      "std": 0.81,
+      "values": [
+        80.0,
+        78.5,
+        78.7
+      ]
+    },
+    "no_optics_raw_mlp": {
+      "mean": 84.47,
+      "std": 0.55,
+      "values": [
+        85.0,
+        83.9,
+        84.5
+      ]
+    },
+    "random_32x32_mlp": {
+      "mean": 83.97,
+      "std": 0.86,
+      "values": [
+        84.9,
+        83.8,
+        83.2
+      ]
+    },
+    "pat_32x32_ridge": {
+      "mean": 79.5,
+      "std": 0.8,
+      "values": [
+        80.3,
+        78.7,
+        79.5
+      ]
+    },
+    "pat_32x32_perturbed_mlp": {
+      "mean": 80.8,
+      "std": 1.15,
+      "values": [
+        81.2,
+        81.7,
+        79.5
+      ]
+    },
+    "pat_32x32_nominal_mlp": {
+      "mean": 84.2,
+      "std": 0.44,
+      "values": [
+        84.4,
+        83.7,
+        84.5
+      ]
+    }
+  }
+}

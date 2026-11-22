@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZERRE (Model H): Wave-Optics Design, Physical Synthesis, and Physics-Aware Training of a Common-Path Optoelectronic Processor</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #eef1f5;
+    color: #111;
+    font-family: "Times New Roman", Times, Georgia, serif;
+    font-size: 9.5pt;
+    line-height: 1.42;
+  }
+  .page-sheet {
+    max-width: 210mm;
+    margin: 12mm auto;
+    background: #fff;
+    padding: 16mm 16mm 18mm 16mm;
+    box-shadow: 0 4px 22px rgba(0,0,0,0.09);
+  }
+  @media print {
+    body { background: #fff; }
+    .page-sheet { margin: 0; padding: 0; box-shadow: none; max-width: none; }
+  }
+  .header-block { text-align: center; margin-bottom: 5mm; }
+  h1.paper-title { font-size: 15.6pt; line-height: 1.24; font-weight: 700; margin: 0 0 2.5mm 0; color: #000; }
+  .authors { font-size: 10.5pt; font-weight: 600; margin-bottom: 1mm; }
+  .affil { font-size: 8.8pt; font-style: italic; color: #333; margin-bottom: 2mm; }
+  .abstract-box {
+    background: #f7f9fa;
+    border-top: 0.9px solid #888;
+    border-bottom: 0.9px solid #888;
+    padding: 3mm 3.8mm;
+    margin-bottom: 5mm;
+    text-align: justify;
+    font-size: 8.9pt;
+    line-height: 1.38;
+  }
+  .abstract-box .abs-lead { font-variant: small-caps; font-weight: 700; }
+  .keywords { margin-top: 2mm; font-size: 8.5pt; text-align: left; }
+  .two-col { column-count: 2; column-gap: 6mm; text-align: justify; }
+  @media (max-width: 720px) { .two-col { column-count: 1; } .page-sheet { padding: 14px; } }
+  h2 {
+    font-size: 10.2pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 0.6px solid #bbb;
+    padding-bottom: 1mm;
+    margin: 4mm 0 2mm 0;
+    column-span: none;
+    text-align: left;
+  }
+  h3 { font-size: 9.5pt; font-style: italic; font-weight: 700; margin: 3mm 0 1.4mm 0; text-align: left; }
+  p { margin: 0 0 2.2mm 0; text-indent: 3.5mm; }
+  p.noindent { text-indent: 0; }
+  .span-all { column-span: all; margin: 3.5mm 0; }
+  figure { margin: 0; text-align: center; }
+  figure img { max-width: 100%; height: auto; border: 0.5px solid #ddd; }
+  figcaption { font-size: 8.1pt; line-height: 1.34; text-align: justify; margin-top: 1.5mm; color: #222; }
+  .eq-row { display: flex; justify-content: space-between; align-items: center; margin: 2mm 0; font-size: 9pt; }
+  .eq-math { flex: 1; text-align: center; font-family: "Cambria Math", "Times New Roman", serif; }
+  .eq-num { width: 8mm; text-align: right; color: #333; }
+  .table-wrap { break-inside: avoid; margin: 2.5mm 0 3.2mm 0; }
+  .table-cap { font-size: 7.9pt; font-weight: 700; text-align: center; margin-bottom: 1.2mm; letter-spacing: 0.2px; }
+  table.acad { width: 100%; border-collapse: collapse; font-size: 7.8pt; line-height: 1.25; }
+  table.acad th, table.acad td { padding: 1.3mm 1.5mm; border-bottom: 0.4px solid #ddd; text-align: left; }
+  table.acad thead th { border-top: 1px solid #000; border-bottom: 0.8px solid #000; background: #f2f5f8; font-weight: 700; }
+  table.acad tbody tr:last-child td { border-bottom: 1px solid #000; }
+  table.acad th.num, table.acad td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.acad tr.highlight td { background: #edf7ed; font-weight: 700; }
+  .tab-note { font-size: 7.2pt; color: #444; margin-top: 1mm; text-align: left; }
+  ol.refs { margin: 0; padding-left: 5mm; font-size: 7.6pt; line-height: 1.32; text-align: left; }
+  ol.refs li { margin-bottom: 1.2mm; }
+</style>
+</head>
+<body>
+<div class="page-sheet">
+  <div class="header-block">
+    <h1 class="paper-title">ZERRE (Model H): Wave-Optics Design, Physical Synthesis, and Physics-Aware Training of a Common-Path Optoelectronic Processor</h1>
+    <div class="authors">Hamza Solak</div>
+    <div class="affil">Independent Researcher, Türkiye &nbsp;|&nbsp; eng.hamzasolak@gmail.com &nbsp;|&nbsp; ORCID: 0009-0004-7541-9620</div>
+  </div>
+
+  <div class="abstract-box">
+    <span class="abs-lead">Abstract:</span> Programmable optical neural processors often rely on expensive spatial light modulators and dual-arm interferometers that suffer from sub-wavelength vibration sensitivity. This numerical design and wave-optics simulation study presents ZERRE (Model H), an open-source common-path optoelectronic architecture built around commodity monochrome masked stereolithography (mSLA) liquid-crystal displays. Guided by measured nematic scattering attenuation, volumetric nematic reservoirs were rejected due to thermal Rayleigh–Gans scattering (15 to 40 dB/cm), and passive-matrix ITO addressing was shown via the Alt–Pleshko bound to compress usable E7 phase retardation from 4.86 rad (1.00–5.00 V) to 0.921 rad for 16 rows. An analytical Wirtinger-adjoint backpropagation operator through scalar Angular Spectrum propagation and coupled Jones modulation (relative finite-difference error 5.52×10<sup>−7</sup>) enables Physics-Aware Training (PAT) against unmodeled hardware perturbations. Across three random seeds (<i>N</i><sub>test</sub> = 1000) in an 8×8 detector-bottlenecked regime, PAT improves linear MNIST accuracy from 67.77% to 77.57% (+9.80 percentage points over matched random optics) while remaining 3.70 points below direct digital area pooling (81.27%). With a 32×32 readout grid and hybrid multilayer perceptron, calibrated accuracy reaches 94.37% on MNIST and 84.20% on Fashion-MNIST, matching raw-pixel (93.93%, 84.47%) and random-optics (94.20%, 83.97%) MLPs; blind PAT attains 77.30% under 15-wavelength Zernike aberrations (+0.63 points over 76.67% head-only recalibration) and retains 94.9% under 4-bit quantization within an estimated $784–$959 component budget.
+    <div class="keywords"><i>Index Terms:</i> Angular spectrum method, diffractive neural networks, liquid-crystal modulators, optoelectronic computing, physics-aware training, Wirtinger adjoint.</div>
+  </div>
+
+  <div class="two-col">
+    <h2>I. Introduction</h2>
+    <p class="noindent">
+      In modern CMOS and GPU accelerators, 60% to 90% of total inference energy is spent moving weights and activations across DRAM and interconnect hierarchies rather than performing multiply-accumulate arithmetic [1], [2]. Free-space and integrated optical computing architectures address this data-movement bottleneck in the analog domain: as an optical field propagates through structured diffractive or phase-modulating elements, spatial superposition executes dense linear transformations passively during its sub-nanosecond transit across a centimeter-scale cavity (~0.33 ns across a 10 cm optical path) [3]–[5].
+    </p>
+    <p>
+      Static 3D-printed diffractive deep neural networks (D²NN) established passive inference at terahertz wavelengths [5], yet fixed dielectric plates cannot be reprogrammed after fabrication. Subsequent reconfigurable systems introduced nanophotonic Mach–Zehnder meshes [6], large-scale diffractive processing units [7], integrated photonic tensor cores [8], time-wavelength interleaving [9], and hybrid optical-electronic convolutional front-ends [10]. Parallel efforts dating back to pocket liquid-crystal televisions [11] and recent spatial-light vector-matrix multipliers [12] demonstrated that display hardware can serve as programmable optical weights.
+    </p>
+    <p>
+      Three engineering barriers still hinder accessible experimental adoption: laboratory liquid-crystal-on-silicon (LCOS) spatial light modulators cost $8,000–$40,000 per plane; dual-arm interferometers experience destructive fade under nanometer path shifts (λ/4 ≈ 133 nm at 532 nm) [6]; and weights trained on idealized numerical models lose accuracy when deployed onto misaligned optical hardware, an effect worsened when designers overlook RMS voltage clamping in passive-matrix liquid-crystal cells.
+    </p>
+    <p>
+      This article presents a numerical design and wave-optics simulation study of <b>ZERRE (Model H)</b>, an open-source common-path optoelectronic processor architecture and digital twin; no physical benchtop prototype has been constructed or optically measured at this stage. Starting from volumetric bulk scattering bounds in nematic liquid crystals [13], eight candidate topologies (Models A–H) are winnowed down to a planar 7 μm thin-cell stack built from commodity monochrome mSLA 2K displays ($40–$60 each). Applying the Alt–Pleshko multiplexing theorem [14] shows that 16×16 passive-matrix scanning (1/5 voltage bias) restricts the RMS selection ratio to 1.290994 and shrinks usable E7 phase retardation by 5.28× (4.86 rad to 0.921 rad), motivating an active-matrix TFT-LCD or direct AC-PWM weight plane. Finally, deriving exact analytical Wirtinger-adjoint gradients through Angular Spectrum propagation enables Physics-Aware Training (PAT) [15], [16] on a perturbed physical plant simulator, audited across three random seeds on MNIST and Fashion-MNIST alongside mechanical, thermal, stray-light, bit-quantization, sub-aperture fill-factor, and Zernike aberration stress tests.
+    </p>
+
+    <div class="span-all">
+      <figure>
+        <img src="../figures/makale_fig1_dalga_en.png" alt="ZERRE Model H Scalar-Wave Pipeline"/>
+        <figcaption>
+          <b>Fig. 1.</b> Scalar wave-optics forward propagation of a handwritten MNIST digit ("8") through the simulated ZERRE Model H pipeline (<i>N</i> = 128², Δ<i>x</i> = 47 μm): <b>(a)</b> input amplitude mask <i>A</i>(<i>x</i>,<i>y</i>) on the monochrome mSLA panel; <b>(b)</b> diffracted field amplitude |<i>E</i><sub>1</sub>(<i>x</i>,<i>y</i>)| at the LC weight plane after <i>Z</i><sub>1</sub> = 5 cm Angular Spectrum propagation; <b>(c)</b> PAT-trained 32×32 active LC phase retardation map Δφ(<i>V<sub>ij</sub></i>) [rad]; <b>(d)</b> CMOS sensor intensity |<i>E</i><sub>2</sub>(<i>x</i>,<i>y</i>)|² after crossed-analyzer projection and <i>Z</i><sub>2</sub> = 5 cm propagation; <b>(e)</b> 32×32 pooled optical feature map (predicted Class 8 at 94.4% confidence; 0.78 ms median CPU simulation time on <i>N</i> = 128²).
+        </figcaption>
+      </figure>
+    </div>
+
+    <h2>II. Architectural Synthesis &amp; Physical Constraints</h2>
+    <h3>A. Bulk Nematic Scattering: Spherical Reservoir vs. Thin Planar Cell</h3>
+    <p class="noindent">
+      Among eight evaluated conceptual topologies (Models A–H), four volumetric nematic-reservoir designs (32-electrode Fibonacci sphere Model A, hemispherical hybrid bowl Model C, photodiode-addressed sphere Model F, and spherical ITO matrix Model G) investigated filling centimeter-scale borosilicate vessels (Ø100 mm) with Merck E7 to induce three-dimensional optical mixing. In nematic mesophases, however, thermal fluctuations of the molecular director generate Rayleigh–Gans scattering roughly two orders of magnitude stronger than intrinsic absorption, producing attenuation coefficients of α<sub>scat</sub> ≈ 15–40 dB/cm across the visible spectrum [13]. Across an <i>L</i> = 10 cm optical path inside a spherical cell, ballistic attenuation reaches 150–400 dB, extinguishing wavefront coherence into diffuse photon transport and rendering the director field unstable under mechanical sloshing.
+    </p>
+    <p>
+      By contrast, confining E7 inside a planar gap of <i>d</i> ≤ 7 μm reduces bulk scattering loss to 0.003–0.03 dB while capillary forces immobilize the fluid layer. At λ = 532 nm, a 7 μm layer of pure E7 (Δ<i>n</i> = 0.225) imparts an unbiased phase retardation of 18.60 rad (≈ 5.92π), spanning multiple interference orders. A monotonic, single-order working window of
+    </p>
+    <div class="eq-row">
+      <div class="eq-math">Δφ<sub>max</sub> = (2π / λ) · Δ<i>n</i><sub>eff</sub> · <i>d</i> ≈ 4.97 rad &nbsp;(≈ 1.58π)</div>
+      <div class="eq-num">(1)</div>
+    </div>
+    <p class="noindent">
+      is realized either with fluorinated nematic mixtures native to mSLA TFT panels (Δ<i>n</i><sub>eff</sub> ≈ 0.060 at <i>d</i> = 7 μm), a thinner <i>d</i> = 1.87 μm pure E7 gap, or a 7 μm E7 cell biased above 2.2 V RMS. Among the remaining planar thin-cell candidates, a passive 16×16 ITO plate (Model B) encounters the multiplexing limit analyzed in Section II-C, a single 7-layer stack (Model D) defines the 7 μm cell cross-section, and a 3-layer cascaded stack (Model E) compounds insertion loss and alignment tolerances, leaving the single-weight-plane common-path stack (Model H) as the minimal realizable synthesis. Any future exploratory test of thick-cell scattering is gated by a low-cost 1 cm glass cuvette transmission check prior to spherical fabrication.
+    </p>
+
+    <h3>B. Input Encoding via Commodity mSLA Monochrome LCDs</h3>
+    <p class="noindent">
+      Mass-produced monochrome LCD panels built for masked stereolithography (mSLA) 3D printers offer a practical alternative to research LCOS modulators. Typical units offer 1440×2560 pixels on a 5.5-inch panel (~47 μm pitch, with 1620×2560 resolution on ~6.1-inch displays), omit absorptive RGB color filters, ship without a backlight as bare transmissive valves, and interface with standard HDMI-to-MIPI driver boards at 60 Hz (8-bit grayscale) for $40–$60. Although thin-film transistor (TFT) bus lines restrict clear aperture transmittance to roughly 4%–8%, a 100 mW 532 nm diode-pumped solid-state (DPSS) laser paired with millisecond camera exposure easily compensates for this loss, while the 16.7 ms frame refresh outpaces the ~50 ms viscoelastic relaxation time of E7.
+    </p>
+
+    <div class="span-all">
+      <figure>
+        <img src="../figures/makale_fig2_alt_pleshko_en.png" alt="Alt-Pleshko Passive-Matrix RMS Limit"/>
+        <figcaption>
+          <b>Fig. 2.</b> Passive-matrix multiplexing limit in nematic LC weight layers: <b>(a)</b> ECB phase retardation Δφ(<i>V</i><sub>rms</sub>) (blue, left axis) and non-monotonic crossed-polarizer intensity transmittance |<i>t</i>(<i>V</i>)|² = sin²(Δφ/2) peaking at Δφ = π near 1.84 V (dashed vermilion, right axis). Red shading marks the [1.00 V, 1.291 V] RMS window (0.921 rad swing) enforced by 16×16 passive scanning versus the 4.64 rad active PAT window over [1.05, 4.95] V (4.86 rad over [1.00, 5.00] V, green). <b>(b)</b> Alt–Pleshko maximum RMS selection ratio and usable phase swing as multiplexed row count <i>N</i> increases from 2 to 32.
+        </figcaption>
+      </figure>
+    </div>
+
+    <h3>C. The Alt–Pleshko RMS Bottleneck in Passive Matrices</h3>
+    <p class="noindent">
+      Addressing an <i>N</i>×<i>N</i> ITO grid using 2<i>N</i> row-and-column channels via time multiplexing (for instance, a 1/5 voltage bias scheme for <i>N</i> = 16) appears economical at first glance. Because the electro-optic dielectric torque in a nematic LC scales quadratically with electric field (∝ <i>E</i>²) and integrates over a ~50 ms response time, each cell reacts to the root-mean-square voltage over the entire scan period rather than instantaneous row pulses:
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><i>V</i><sub>rms</sub>(<i>i</i>,<i>j</i>) = √[ (1/<i>N</i>)(<i>V</i><sub>sel</sub> + <i>U<sub>ij</sub>V</i><sub>data</sub>)² + (1/<i>N</i>) ∑<sub><i>r</i>≠<i>i</i></sub> (<i>U<sub>rj</sub>V</i><sub>data</sub>)² ]</div>
+      <div class="eq-num">(2)</div>
+    </div>
+    <p class="noindent">
+      where <i>U<sub>rj</sub></i> ∈ [−1, +1] denotes normalized column weights. Under optimal drive ratio <i>V</i><sub>sel</sub>/<i>V</i><sub>data</sub> = √<i>N</i> (= 4 for <i>N</i> = 16), the Alt–Pleshko theorem [14] bounds the maximum RMS selection ratio to
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><i>V</i><sub>on,rms</sub> / <i>V</i><sub>off,rms</sub> ≤ √[ (√<i>N</i> + 1) / (√<i>N</i> − 1) ]</div>
+      <div class="eq-num">(3)</div>
+    </div>
+    <p class="noindent">
+      For <i>N</i> = 16 multiplexed rows, this ceiling equals √(5/3) ≈ 1.290994 (dropping further to 1.195606 at <i>N</i> = 32). Holding unselected elements near the 1.00 V Freedericksz threshold caps selected pixels at 1.291 V RMS, reducing usable E7 phase modulation from 4.86 rad down to 0.921 rad (5.28× loss, Fig. 2a) while introducing vertical column crosstalk through the summation in Eq. (2). Model H therefore replaces passive row scanning in the weight plane with either direct AC-coupled PWM channels or a second commodity active-matrix TFT mSLA panel, whose pixel-level storage capacitors eliminate column crosstalk.
+    </p>
+
+    <h2>III. Wave-Optics Model &amp; Physics-Aware Training</h2>
+    <h3>A. Angular Spectrum Propagation and Coupled Jones Modulation</h3>
+    <p class="noindent">
+      Linearly polarized (0°) 532 nm light modulated in amplitude by the input mSLA panel forms <i>E</i><sub>0</sub>(<i>x</i>,<i>y</i>) = <i>A</i>(<i>x</i>,<i>y</i>) and propagates across free space <i>Z</i><sub>1</sub> = 5 cm via the non-paraxial scalar Angular Spectrum Method (ASM) [17]:
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><i>E</i><sub>1</sub> = 𝒫<sub><i>Z</i>1</sub>{<i>E</i><sub>0</sub>} = ℱ<sup>−1</sup>{ ℱ{<i>E</i><sub>0</sub>} ⊙ <i>H</i>(<i>f<sub>x</sub></i>, <i>f<sub>y</sub></i>; <i>Z</i><sub>1</sub>) }</div>
+      <div class="eq-num">(4)</div>
+    </div>
+    <div class="eq-row">
+      <div class="eq-math"><i>H</i>(<i>f<sub>x</sub></i>, <i>f<sub>y</sub></i>; <i>z</i>) = exp[ <i>i</i>(2π/λ)<i>z</i>√(1 − λ²<i>f<sub>x</sub></i>² − λ²<i>f<sub>y</sub></i>²) ] · 𝟙<sub><i>fx</i>²+<i>fy</i>² &lt; λ<sup>−2</sup></sub></div>
+      <div class="eq-num">(5)</div>
+    </div>
+    <p class="noindent">
+      where evanescent spatial frequencies are truncated. At the weight plane, our analytical model treats each pixel as a parallel-aligned electrically controlled birefringence (ECB) retarder oriented at 45° between crossed polarizers (0°/90°). Up to an overall global phase, its scalar Jones transmittance is
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><i>t</i>(<i>V<sub>ij</sub></i>) = sin(Δφ(<i>V<sub>ij</sub></i>)/2) · exp(<i>i</i> Δφ(<i>V<sub>ij</sub></i>)/2)</div>
+      <div class="eq-num">(6)</div>
+    </div>
+    <p class="noindent">
+      producing <i>E</i><sub>2</sub> = 𝒫<sub><i>Z</i>2</sub>{<i>E</i><sub>1</sub> ⊙ <i>M</i>(<b>V</b>)} across <i>Z</i><sub>2</sub> = 5 cm and square-law sensor intensity <i>I</i><sub>CMOS</sub> = |<i>E</i><sub>2</sub>|², which is block-averaged over a centered <i>K</i>×<i>K</i> detector grid into <b>f</b> ∈ ℝ<sup><i>K</i>²</sup> (Fig. 1). Notice that Δφ(<i>V</i>) follows a piecewise-linear electro-optic curve falling monotonically from 4.97 rad at 1.00 V to 0.11 rad at 5.00 V (4.86 rad full span; 4.64 rad within the PAT active bounds [1.05, 4.95] V), whereas the intensity factor |<i>t</i>(<i>V</i>)|² = sin²(Δφ/2) is non-monotonic and peaks at Δφ = π (Fig. 2a). Here Eq. (6) acts as a closed-form coupled amplitude–phase surrogate for commercial twisted-nematic (TN) mSLA displays [18]; physical assembly using a TN weight panel requires aligning its polarizers appropriately and empirically calibrating its voltage–Jones curve. Forward and adjoint FFT propagations during PAT execute in <code>complex64</code> precision, whereas non-PAT analytical sweeps and evaluation paths run in <code>complex128</code>.
+    </p>
+    <p>
+      With pixel pitch Δ<i>x</i> = 47 μm, the critical ASM sampling dimension is <i>N</i><sub>crit</sub> = λ<i>Z</i><sub>1</sub>/Δ<i>x</i>² ≈ 12.0 pixels, so an <i>N</i> = 128 (or 256) grid satisfies Nyquist sampling by more than an order of magnitude. Maximum diffraction walk-off across <i>Z</i><sub>1</sub> is <i>Z</i><sub>1</sub>λ/(2Δ<i>x</i>) = 0.283 mm, well within the zero-padded spatial guard bands of 1.69 mm around the 2.63 mm input digit and 0.75 mm around the 4.51 mm active weight array at <i>N</i> = 128 (2.73 mm and 1.50 mm at <i>N</i> = 256), suppressing circular wrap-around aliasing.
+    </p>
+
+    <h3>B. Analytical Wirtinger Adjoint Backpropagation</h3>
+    <p class="noindent">
+      To differentiate a scalar task loss ℒ with respect to the control voltages <b>V</b> without finite-difference evaluations across hundreds of electrodes, the complex Wirtinger error field at the sensor plane for <i>I</i> = <i>E</i><sub>2</sub><i>E</i><sub>2</sub><sup>*</sup> is written as
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><i>G</i><sub>cam</sub> = 2(∂ℒ/∂<i>I</i>) ⊙ <i>E</i><sub>2</sub></div>
+      <div class="eq-num">(7)</div>
+    </div>
+    <p class="noindent">
+      Under the discrete real inner product ⟨<i>u</i>, <i>v</i>⟩ = Re ∑ <i>u</i><sup>*</sup><i>v</i>, the exact Hermitian adjoint of ASM propagation is backward propagation by −<i>Z</i><sub>2</sub>:
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><i>G</i><sub>mask</sub> = 𝒫<sub><i>Z</i>2</sub><sup>†</sup>{<i>G</i><sub>cam</sub>} = ℱ<sup>−1</sup>{ ℱ{<i>G</i><sub>cam</sub>} ⊙ <i>H</i><sup>*</sup>(<i>f<sub>x</sub></i>, <i>f<sub>y</sub></i>; <i>Z</i><sub>2</sub>) }</div>
+      <div class="eq-num">(8)</div>
+    </div>
+    <p class="noindent">
+      Integrating <i>G<sub>t,ij</sub></i> = ∑<sub>(<i>u</i>,<i>v</i>)∈Ω<sub><i>ij</i></sub></sub> <i>E</i><sub>1</sub><sup>*</sup>(<i>u</i>,<i>v</i>) <i>G</i><sub>mask</sub>(<i>u</i>,<i>v</i>) over each electrode macro-pixel Ω<sub><i>ij</i></sub> and applying <i>dt</i>/<i>d</i>φ = (1/2)<i>e<sup>iφ</sup></i> yields the exact closed-form voltage gradient in one inverse-and-forward FFT pair:
+    </p>
+    <div class="eq-row">
+      <div class="eq-math">∂ℒ/∂<i>V<sub>ij</sub></i> = Re{ <i>G<sub>t,ij</sub></i><sup>*</sup> · (1/2)exp(<i>i</i> Δφ(<i>V<sub>ij</sub></i>)) } · (<i>d</i>Δφ/<i>dV</i>)|<sub><i>Vij</i></sub></div>
+      <div class="eq-num">(9)</div>
+    </div>
+    <p class="noindent">
+      Against central finite differences (ε = 10<sup>−6</sup>), Eq. (9) agrees to a relative <i>L</i><sub>2</sub> error of 5.52×10<sup>−7</sup> in active mode and 7.46×10<sup>−7</sup> under the passive Alt–Pleshko RMS chain rule (Fig. 3b).
+    </p>
+
+    <div class="span-all">
+      <figure>
+        <img src="../figures/makale_fig3_ablasyon_pat_en.png" alt="Controlled Ablation and Adjoint Gradient Check"/>
+        <figcaption>
+          <b>Fig. 3.</b> <b>(a)</b> Leakage-free 3-seed MNIST test accuracy (mean ± 1 SD, <i>N</i><sub>test</sub> = 1000) across all 11 matched configurations in the 8×8 detector-bottlenecked regime on a perturbed physical plant simulator. PAT-trained 32×32 active optics improves linear classification by +9.80 points over matched random optics (77.57% vs. 67.77%) while remaining 3.70 points below direct digital area pooling (81.27%). <b>(b)</b> Parameter-wise agreement between analytical Wirtinger adjoint gradients and central finite differences (ε = 10<sup>−6</sup>).
+        </figcaption>
+      </figure>
+    </div>
+
+    <h3>C. Physics-Aware Training and Dark-Frame Stabilization</h3>
+    <p class="noindent">
+      Because physical optical builds exhibit uncalibrated mounting offsets, temperature shifts, and readout noise, our Physics-Aware Training (PAT) loop [15] evaluates forward sensor features <b>f</b><sub>phys</sub> using a perturbed physical plant simulator while computing optical backward steps via Eqs. (7)–(9) on the uncalibrated nominal digital twin (retaining Simultaneous Perturbation Stochastic Approximation, SPSA [19], as a gradient-free fallback). Under ambient stray light, near-zero-variance peripheral CMOS pixels can blow up by orders of magnitude during z-score normalization. We suppress this instability by subtracting a 16-frame noisy dark background estimate and enforcing a training-only standard-deviation floor:
+    </p>
+    <div class="eq-row">
+      <div class="eq-math"><b>f̃</b> = ( (<b>f</b><sub>on</sub> − <b>f</b><sub>dark</sub>) − <b>μ</b><sub>tr</sub> ) / max( <b>σ</b><sub>tr</sub>, 0.05·mean(<b>σ</b><sub>tr</sub>) )</div>
+      <div class="eq-num">(10)</div>
+    </div>
+    <p class="noindent">where <b>μ</b><sub>tr</sub> and <b>σ</b><sub>tr</sub> are computed strictly from the training split without test-set leakage.</p>
+
+    <div class="table-wrap">
+      <div class="table-cap">TABLE I — SIMULATION SETUP, OPTICAL GEOMETRY, AND HYPERPARAMETERS</div>
+      <table class="acad">
+        <thead>
+          <tr><th>Parameter</th><th>Value / Specification</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Wavelength λ / Pixel pitch Δ<i>x</i></td><td>532 nm / 47 μm</td></tr>
+          <tr><td>Axial spacings <i>Z</i><sub>1</sub>, <i>Z</i><sub>2</sub></td><td>50 mm, 50 mm (10 cm path, 0.33 ns)</td></tr>
+          <tr><td>Grid sizes <i>N</i></td><td>128×128 (6.02 mm), 256×256 (12.03 mm)</td></tr>
+          <tr><td>ASM critical grid / Walk-off</td><td><i>N</i><sub>crit</sub> = 12.0 px / 0.283 mm</td></tr>
+          <tr><td>Zero-pad guard bands (<i>N</i> = 128)</td><td>1.69 mm (input), 0.75 mm (weight)</td></tr>
+          <tr><td>Active / Passive control bounds</td><td>[1.05, 4.95] V (4.64 rad) / [−1, +1] (0.921 rad)</td></tr>
+          <tr><td>Optimizer</td><td>Adam (lr<sub>opt</sub> = 0.07–0.10; lr<sub>head</sub> = 2.5×10<sup>−2</sup> / 2.5×10<sup>−3</sup>)</td></tr>
+          <tr><td>Regularization / Schedule</td><td>10<sup>−4</sup> <i>L</i><sub>2</sub>; 16–22 ep. (PAT), 40–45 ep. (MLP); early stop</td></tr>
+          <tr><td>Perturbed plant faults</td><td>47 μm LCD/CMOS, +1.2/−0.8 mm <i>Z</i>, 29 °C, 2% drift</td></tr>
+          <tr><td>Evaluation seeds / Test count</td><td>{7, 19, 42} / <i>N</i><sub>test</sub> = 1000 per split</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>IV. Numerical Results and Analysis</h2>
+    <h3>A. Controlled 8×8 Detector Ablation on MNIST</h3>
+    <p class="noindent">
+      All numerical experiments were executed in Python 3.11.9 / NumPy 2.2.3 on CPU (Intel64 Family 6 Model 170) using <code>complex64</code> propagation in PAT paths and <code>complex128</code> in non-PAT/evaluation paths under the hyperparameters summarized in Table I. To isolate what programmable optical weights contribute when electronic readout bandwidth is severely constrained, we benchmarked 11 matched configurations over an 8×8 = 64 detector grid on MNIST [20] across three random seeds (<i>N</i><sub>fit</sub> = 2640, <i>N</i><sub>val</sub> = 360, <i>N</i><sub>test</sub> = 1000). The plant simulator included 47 μm lateral LCD and sensor shifts, +1.2 mm/−0.8 mm axial spacing errors, a 29 °C Haller thermal birefringence drift [21], [22], 2% laser gain drift, and Gaussian readout noise, all unknown to the surrogate twin (Table II, Fig. 3a).
+    </p>
+
+    <div class="table-wrap">
+      <div class="table-cap">TABLE II — CONTROLLED MNIST ABLATION ON PERTURBED PLANT (8×8, 3 SEEDS)</div>
+      <table class="acad">
+        <thead>
+          <tr><th>#</th><th>Architecture / Configuration</th><th class="num">Opt. W</th><th class="num">Dig. W</th><th class="num">Test (%)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Digital Area Pooling (8×8) + Linear</td><td class="num">0</td><td class="num">650</td><td class="num">81.27 ± 0.55</td></tr>
+          <tr><td>2</td><td>Digital PCA Basis (64-dim) + Linear</td><td class="num">0</td><td class="num">650ᵃ</td><td class="num">83.97 ± 1.29</td></tr>
+          <tr><td>3</td><td>Free-Space Diffraction Only (No LC)</td><td class="num">0</td><td class="num">650</td><td class="num">68.57 ± 0.95</td></tr>
+          <tr><td>4</td><td>Passive 16×16 Random + Linear</td><td class="num">256</td><td class="num">650</td><td class="num">69.00 ± 0.40</td></tr>
+          <tr><td>5</td><td>Active 16×16 Random + Linear</td><td class="num">256</td><td class="num">650</td><td class="num">67.43 ± 0.85</td></tr>
+          <tr><td>6</td><td>Active 32×32 Random + Linear</td><td class="num">1,024</td><td class="num">650</td><td class="num">67.77 ± 0.40</td></tr>
+          <tr><td>7</td><td>Passive 16×16 + PAT + Linear</td><td class="num">256</td><td class="num">650</td><td class="num">73.53 ± 2.04</td></tr>
+          <tr><td>8</td><td>Active 16×16 + PAT + Linear</td><td class="num">256</td><td class="num">650</td><td class="num">74.13 ± 0.75</td></tr>
+          <tr class="highlight"><td>9</td><td>Active 32×32 + PAT + Linear</td><td class="num">1,024</td><td class="num">650</td><td class="num">77.57 ± 2.22</td></tr>
+          <tr><td>10</td><td>Digital Area Pooling (8×8) + MLP</td><td class="num">0</td><td class="num">19,210</td><td class="num">91.60 ± 1.25</td></tr>
+          <tr class="highlight"><td>11</td><td>Active 32×32 + PAT + MLP</td><td class="num">1,024</td><td class="num">19,210</td><td class="num">84.53 ± 1.47</td></tr>
+        </tbody>
+      </table>
+      <div class="tab-note">ᵃExcludes the 784×64 linear PCA projection matrix fit on training data.</div>
+    </div>
+
+    <p>
+      Two clear trends emerge from Table II. First, unoptimized diffraction degrades accuracy sharply relative to direct imaging onto an 8×8 pixel sensor (67.77%–69.00% vs. 81.27%) because free-space divergence spreads localized strokes across coarse pixels. Optimizing the 32×32 active LC weights with PAT recovers +9.80 percentage points over matched 32×32 random optics (67.77% → 77.57%) and +9.00 points over bare free-space propagation (68.57%). By contrast, at 16×16 optical resolution, passive PAT (73.53 ± 2.04%) and active PAT (74.13 ± 0.75%) are statistically equivalent within one standard deviation because the 8×8 readout remains bottlenecked by detector rank rather than phase stroke. Second, a single programmable diffractive layer operating on positive square-law intensity still lags behind direct electronic 8×8 area pooling (77.57% vs. 81.27%, and 84.53% vs. 91.60% with a 19K-parameter MLP), while a data-driven linear PCA-64 projection sets the unconstrained linear ceiling at 83.97 ± 1.29%. Single-plane optics learns a task-aligned spatial kernel relative to random wave mixing, but does not outcompute noiseless digital spatial pooling by itself.
+    </p>
+
+    <h3>B. Full-Scale 32×32 Hybrid Classification on MNIST and Fashion-MNIST</h3>
+    <p class="noindent">
+      Scaling the CMOS detector grid to 32×32 (1,024 pooled features) reveals how optical and electronic capacities interact across both MNIST [20] and 10-class Fashion-MNIST [23] (Table III). With a regularized Ridge linear readout at <i>N</i><sub>train</sub> = 6000, a fixed random 32×32 optical mask outperforms raw 28×28 digital pixels on MNIST (85.57 ± 1.76% vs. 82.93 ± 1.70%), whereas PAT-trained 32×32 Ridge on Fashion-MNIST is comparable to raw digital pixels within one standard deviation (79.50 ± 0.80% vs. 79.07 ± 0.81%).
+    </p>
+
+    <div class="table-wrap">
+      <div class="table-cap">TABLE III — FULL-SCALE 32×32 HYBRID &amp; DIGITAL BASELINES (3 SEEDS, <i>N</i><sub>test</sub> = 1000)</div>
+      <table class="acad">
+        <thead>
+          <tr><th>Configuration</th><th class="num">Opt. W</th><th class="num">Dig. W</th><th class="num">MNIST (%)</th><th class="num">F-MNIST (%)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Raw 28×28 Digital Ridge (<i>N</i>=6k)</td><td class="num">0</td><td class="num">7,850</td><td class="num">82.93 ± 1.70</td><td class="num">79.07 ± 0.81</td></tr>
+          <tr><td>Opt. 16×16, 256f Ridge (<i>N</i>=2.5k)</td><td class="num">256</td><td class="num">2,570</td><td class="num">81.73 ± 0.72</td><td class="num">—</td></tr>
+          <tr><td>Opt. 16×16, 1024f Ridge (<i>N</i>=2.5k)</td><td class="num">256</td><td class="num">10,250</td><td class="num">84.77 ± 1.00</td><td class="num">—</td></tr>
+          <tr><td>Opt. 32×32 Rand., 1024f Ridge (<i>N</i>=6k)</td><td class="num">1,024</td><td class="num">10,250</td><td class="num">85.57 ± 1.76</td><td class="num">—</td></tr>
+          <tr><td>Opt. 32×32 PAT, 1024f Ridge (<i>N</i>=6k)</td><td class="num">1,024</td><td class="num">10,250</td><td class="num">—</td><td class="num">79.50 ± 0.80</td></tr>
+          <tr><td>Raw 28×28 Digital MLP (<i>N</i>=6k)</td><td class="num">0</td><td class="num">203,530</td><td class="num">93.93 ± 0.99</td><td class="num">84.47 ± 0.55</td></tr>
+          <tr><td>32×32 Random Optics + MLP</td><td class="num">1,024</td><td class="num">264,970</td><td class="num">94.20 ± 0.95</td><td class="num">83.97 ± 0.86</td></tr>
+          <tr><td>32×32 PAT + MLP (Perturbed)</td><td class="num">1,024</td><td class="num">264,970</td><td class="num">89.77 ± 3.27</td><td class="num">80.80 ± 1.15</td></tr>
+          <tr class="highlight"><td>32×32 PAT + MLP (Nominal)</td><td class="num">1,024</td><td class="num">264,970</td><td class="num">94.37 ± 0.84</td><td class="num">84.20 ± 0.44</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Once a 1024→256→10 ReLU MLP (264,970 digital weights) is attached, electronic capacity dominates classification accuracy: calibrated nominal PAT (94.37% MNIST, 84.20% Fashion-MNIST), random fixed optics with an MLP (94.20%, 83.97%), and raw digital pixels with an MLP (93.93%, 84.47%) all converge within ~0.5 percentage points. Under the uncompensated perturbed plant simulator, PAT MLP scores 89.77 ± 3.27% on MNIST and 80.80 ± 1.15% on Fashion-MNIST. Conversely, in the detector-constrained 8×8 Fashion-MNIST regime (Fig. 5c), PAT linear classification again yields +9.80 points over random optics (71.63 ± 1.59% vs. 61.83 ± 0.72%), reaching 77.53 ± 1.19% with a 19K MLP versus 74.00 ± 1.97% (linear) and 81.47 ± 1.80% (MLP) for direct 8×8 digital pooling.
+    </p>
+
+    <div class="span-all">
+      <figure>
+        <img src="../figures/makale_fig4_dayanim_en.png" alt="Mechanical and Environmental Robustness"/>
+        <figcaption>
+          <b>Fig. 4.</b> Mechanical and environmental stress tests (<i>N</i><sub>test</sub> = 1000, seed 7, nominal base 94.8%): <b>(a)</b> single-axis lateral shifts of the LC weight cell (94.8% → 94.1% at 188 μm), input LCD (94.8% → 68.2%), and CMOS sensor (94.8% → 68.3%), alongside combined 47 μm + 1 mm misalignment (87.9% nominal head; 88.1% perturbed-trained head from 87.8% base); <b>(b)</b> stray ambient light collapse versus 16-frame noisy dark-frame subtraction with training-only standard-deviation floor, plus 30 °C + 1% + 2% recovery (69.7% → 95.0%); <b>(c)</b> uncalibrated Haller thermal sweep (20–55 °C, <i>T<sub>c</sub></i> = 59 °C).
+        </figcaption>
+      </figure>
+    </div>
+
+    <h3>C. Mechanical Alignment, Thermal Drift, and Ambient Light Resilience</h3>
+    <p class="noindent">
+      In a common-path cavity without an external reference arm, axial intensity tolerance scales with the Talbot distance <i>z<sub>T</sub></i> = 2Δ<i>x</i>²/λ ≈ 8.3 mm. Evaluated on 1,000 MNIST test digits (seed 7, nominal base 94.8%, Fig. 4a), shifting the LC weight panel laterally up to 188 μm incurs at most 0.7 points loss (94.8% → 94.1%) because incident optical fields are spatially smooth. Input LCD and CMOS sensor shifts exhibit steeper sensitivity beyond 47 μm (94.0% at 47 μm, 68.2% and 68.3% at 188 μm), whereas axial shifts Δ<i>Z</i><sub>1</sub> ∈ [0, 8 mm] remain within 94.7%–95.1%. Applying 47 μm lateral shifts on all planes plus +1 mm axial offset lowers nominal-head accuracy to 87.9% (−6.9 points), while a head trained directly under plant perturbations holds 88.1% relative to its 87.8% baseline.
+    </p>
+    <p>
+      Modeling E7 birefringence via the Haller power law [21], [22]:
+    </p>
+    <div class="eq-row">
+      <div class="eq-math">Δ<i>n</i>(<i>T</i>) / Δ<i>n</i>(25 °C) = [ (<i>T<sub>c</sub></i> − <i>T</i>) / (<i>T<sub>c</sub></i> − 25) ]<sup>β</sup>, &nbsp; <i>T<sub>c</sub></i> = 59 °C, &nbsp; β = 0.22</div>
+      <div class="eq-num">(11)</div>
+    </div>
+    <p class="noindent">
+      uncalibrated classification stays between 94.8% and 94.9% across 20–35 °C, dipping to 92.2% at 55 °C near the clearing point (Fig. 4c). Without background subtraction, stray ambient light totaling 1% or 5% of mean signal drops accuracy to 68.3% and 11.4%. Subtracting a 16-frame noisy dark-frame estimate alongside Eq. (10) maintains 94.8% at 1%, 94.3% at 5%, 88.5% at 20%, and 78.4% at 50% ambient leakage, and restores a combined 30 °C + 1% leakage + 2% laser drift fault from 69.7% to 95.0%. Laser power variations across ±10% stay within 94.7%–95.0%.
+    </p>
+
+    <div class="span-all">
+      <figure>
+        <img src="../figures/makale_fig5_gercekcilik_en.png" alt="Hardware Realism, Wavefront Aberrations, and Fashion-MNIST"/>
+        <figcaption>
+          <b>Fig. 5.</b> Hardware-realism and generalization benchmarks (<i>N</i><sub>test</sub> = 1000): <b>(a)</b> post-training weight quantization with an 8-bit HDMI input panel (flat at 94.8%–94.9% down to 4 bits, 92.9% at 2 bits) and macro-pixel sub-aperture fill-factor inset (uncalibrated 91.4% → 90.7% vs. head-recalibrated 91.4% → 92.3% at 25% fill); <b>(b)</b> 3-seed Zernike wavefront aberrations (0–15λ PV + 3<i>Z</i><sub>1</sub> ghost) comparing uncompensated weights (65.27 ± 7.67% at 15λ), matched CE head-only recalibration (76.67 ± 1.15%), and blind-surrogate PAT (77.30 ± 1.82%); <b>(c)</b> 3-seed 10-class Fashion-MNIST comparison across 8×8 and 32×32 regimes.
+        </figcaption>
+      </figure>
+    </div>
+
+    <h3>D. Bit Quantization, Aperture Proxy, and Wavefront Aberrations</h3>
+    <p class="noindent">
+      Three further simulation checks test assumptions prior to benchtop fabrication (Fig. 5a–b). Under post-training quantization of an 8-bit HDMI input coupled with <i>b</i>-bit LC control voltages (seed 7), accuracy remains constant at 94.8%–94.9% down to 4 bits (16 voltage levels), slipping modestly to 94.6% at 3 bits and 92.9% at 2 bits. Simulating a macro-pixel sub-aperture fill-factor proxy from 100% down to 25% (<i>N</i> = 256 fine grid, leakage-free gain scaling) reduces uncalibrated accuracy slightly from 91.4% to 90.7%, while recalibrating only the digital readout head stabilizes performance at 92.3%.
+    </p>
+    <p>
+      Introducing fifth-order Zernike substrate wavefront aberrations (0–15λ peak-to-valley across defocus, astigmatism, coma, spherical aberration, and float-glass ripple) plus a 3<i>Z</i><sub>1</sub> Fabry–Pérot ghost (0.04 Fresnel field amplitude) reveals a nuanced comparison when all conditions share identical cross-entropy Adam readout optimization (Fig. 5b). Across 1λ to 10λ, recalibrating the linear head with frozen optical weights recovers nearly all uncompensated loss (78.03% → 78.63% at 1λ; 71.30% → 77.53% at 10λ), performing comparably to blind-surrogate PAT (78.50% and 76.70%). At severe 15λ distortion, uncompensated deployment falls to 65.27 ± 7.67%, head recalibration alone reaches 76.67 ± 1.15%, and joint optical adaptation via PAT attains 77.30 ± 1.82%.
+    </p>
+
+    <div class="table-wrap">
+      <div class="table-cap">TABLE IV — ESTIMATED PROTOTYPE BILL OF MATERIALS (BOM)</div>
+      <table class="acad">
+        <thead>
+          <tr><th>Subsystem</th><th>Selected Hardware</th><th class="num">Cost (USD)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Optical Input</td><td>532 nm DPSS (100 mW) + Expander + mSLA LCD</td><td class="num">150</td></tr>
+          <tr><td>Active Weights</td><td>2nd mSLA TFT-LCD (or ITO Cell + AC-PWM)</td><td class="num">90–230</td></tr>
+          <tr><td>Readout &amp; Host</td><td>RPi Camera 3 (IMX708, 12 MP) + M12 + RPi 5</td><td class="num">125</td></tr>
+          <tr><td>Optomechanics</td><td>Optical Rail, Mounts, Dark Box, 532 nm Filter</td><td class="num">262</td></tr>
+          <tr><td>Subtotal</td><td>Core optical and electronic components</td><td class="num">627–767</td></tr>
+          <tr class="highlight"><td>Total (+25%)</td><td>Complete benchtop prototype w/ contingency</td><td class="num">784–959</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>V. Discussion, Limitations, &amp; Hardware Roadmap</h2>
+    <p class="noindent">
+      Component pricing for a modular optical rail build is itemized in Table IV, totaling $627–$767 in direct hardware or $784–$959 including a 25% contingency margin. Three practical timescales govern such a system and must be clearly separated: passive coherent wave propagation across 10 cm of optics takes ~0.33 ns; benchtop image-by-image throughput would be paced electronically by the 60 Hz LCD/camera frame interval (~16.7 ms) during inference and by the ~50 ms nematic relaxation time during weight updates; and our uncompiled NumPy CPU ASM simulator runs at a warmed median time of 0.78 ms per digit (<i>N</i> = 128², Intel64 Family 6 Model 170 CPU, Python 3.11.9 / NumPy 2.2.3, mean 0.87 ms, IQR 0.08 ms, range 0.71–2.74 ms across 50 runs).
+    </p>
+    <p>
+      Benchtop construction introduces several engineering requirements omitted from simplified 2D models. First, a Raspberry Pi Camera Module 3 (IMX708 sensor area 6.45 × 3.63 mm) is slightly smaller along its minor axis than the 4.51–6.02 mm diffracted field, necessitating a ~1.6× demagnifying M12 relay lens pair. Second, a 100 mW 532 nm DPSS laser is a Class 3B source requiring OD 4+ protective eyewear, a light-tight matte enclosure, and an infrared-cut filter to reject unabsorbed 808 nm and 1064 nm pump leakage. Third, commodity PCA9685 PWM driver boards emit unipolar pulses that induce electrochemical degradation across bare ITO electrodes unless buffered by an AC polarity-inversion circuit, reinforcing our selection of an active TFT display backplane.
+    </p>
+
+    <h3>A. Limitations</h3>
+    <p class="noindent">
+      Six principal limitations qualify these numerical findings and define the remaining engineering work before physical claims can be made. First, all classification accuracies and fault tolerances originate from wave-optics simulations; benchtop fabrication, optical alignment, and empirical detector noise measurements remain future work. Second, on 8×8 detectors, PAT-trained optics beats matched random optics substantially (+9.80 points), yet still underperforms direct digital area pooling (77.57% vs. 81.27%); when a 265K-parameter MLP head is attached at 32×32, electronic capacity masks optical differences within ~0.5 points.
+    </p>
+    <p>
+      Third, Eq. (6) models a parallel ECB retarder as an analytical proxy, whereas twisted-nematic mSLA panels exhibit coupled polarization rotation [18] that demands empirical lookup characterization. Fourth, our scalar simulations assume monochromatic, spatially uniform illumination, omitting DPSS laser speckle, finite coherence length, and multi-plane inter-reflections beyond the simulated 0.04 Fabry–Pérot ghost. Fifth, each 32×32 weight block groups dozens of native 47 μm mSLA sub-pixels, so our <i>N</i> = 256 sub-aperture fill-factor test serves only as a scaled proxy rather than resolving the physical panel over a multi-thousand-pixel grid. Finally, weights tuned for one perturbed cell do not transfer directly to another cell with distinct alignment and cell-gap variations unless paired with calibration-robust objectives such as Sharpness-Aware Training [24].
+    </p>
+
+    <h2>VI. Conclusion</h2>
+    <p class="noindent">
+      Starting from bulk nematic Rayleigh–Gans attenuation (15–40 dB/cm) and Alt–Pleshko RMS voltage limits (5.28× swing loss on 16-row passive grids), this study synthesized the planar common-path ZERRE (Model H) architecture around commodity mSLA panels within a $784–$959 prototype estimate. An exact Wirtinger-adjoint operator through scalar ASM diffraction enabled Physics-Aware Training under unmodeled mechanical, thermal, ambient-light, and aberration faults, raising 8×8 linear MNIST accuracy by +9.80 points over random optics (77.57%) and achieving 94.37% MNIST and 84.20% Fashion-MNIST accuracy at 32×32 hybrid readout resolution, while clarifying the boundary where optical weighting adds value and identifying concrete benchtop calibration steps ahead.
+    </p>
+
+    <h2>Data and Code Availability</h2>
+    <p class="noindent">
+      All Python wave-optics simulation scripts (<code>zerre_twin.py</code>, <code>zerre_pat_torch.py</code>), the interactive WebGL/ASM visualizer (<code>start_server.py</code>), automated physics unit tests (<code>tests/test_zerre_physics.py</code>), 3-seed benchmark outputs (<code>makale/scripts/paper_results.json</code>), and figure/manuscript generation scripts are openly released under the <b>MIT License</b> (code) and <b>CC BY 4.0 License</b> (manuscript text and figures), alongside local caching support for standard MNIST and Fashion-MNIST datasets, at <a href="https://github.com/hamzasolak/zerre">https://github.com/hamzasolak/zerre</a> (release tag <code>v0.4.0</code>; Author ORCID: <a href="https://orcid.org/0009-0004-7541-9620">0009-0004-7541-9620</a>).
+    </p>
+
+    <h2>Funding</h2>
+    <p class="noindent">This work was conducted as independent research without external institutional or commercial grant funding.</p>
+
+    <h2>Conflicts of Interest</h2>
+    <p class="noindent">The author declares no conflicts of interest.</p>
+
+    <h2>Acknowledgments</h2>
+    <p class="noindent">
+      Generative AI assistance (Gemini and Claude) was used for prose editing, LaTeX formatting, and code-audit verification across Sections I–VI; the author conceived the physical design, wrote and verified the wave-optics simulation code, executed all multi-seed benchmarks, and takes full responsibility for all scientific claims and results.
+    </p>
+
+    <h2>References</h2>
+    <ol class="refs">
+      <li>[1] M. Horowitz, "1.1 Computing's energy problem (and what we can do about it)," <i>IEEE ISSCC Dig. Tech. Papers</i>, San Francisco, CA, USA, pp. 10–14, 2014, doi: 10.1109/ISSCC.2014.6757323.</li>
+      <li>[2] V. Sze, Y.-H. Chen, T.-J. Yang, and J. S. Emer, "Efficient Processing of Deep Neural Networks: A Tutorial and Survey," <i>Proc. IEEE</i>, vol. 105, no. 12, pp. 2295–2329, 2017, doi: 10.1109/JPROC.2017.2761740.</li>
+      <li>[3] G. Wetzstein et al., "Inference in artificial intelligence with deep optics and photonics," <i>Nature</i>, vol. 588, no. 7836, pp. 39–47, 2020, doi: 10.1038/s41586-020-2973-6.</li>
+      <li>[4] D. Psaltis and N. H. Farhat, "Optical information processing based on an associative-memory model of neural nets with thresholding and feedback," <i>Opt. Lett.</i>, vol. 10, no. 2, pp. 98–100, 1985, doi: 10.1364/OL.10.000098.</li>
+      <li>[5] X. Lin et al., "All-optical machine learning using diffractive deep neural networks," <i>Science</i>, vol. 361, no. 6406, pp. 1004–1008, 2018, doi: 10.1126/science.aat8084.</li>
+      <li>[6] Y. Shen et al., "Deep learning with coherent nanophotonic circuits," <i>Nat. Photonics</i>, vol. 11, no. 7, pp. 441–446, 2017, doi: 10.1038/nphoton.2017.93.</li>
+      <li>[7] T. Zhou et al., "Large-scale neuromorphic optoelectronic computing with a reconfigurable diffractive processing unit," <i>Nat. Photonics</i>, vol. 15, no. 5, pp. 367–375, 2021, doi: 10.1038/s41566-021-00796-w.</li>
+      <li>[8] J. Feldmann et al., "Parallel convolutional processing using an integrated photonic tensor core," <i>Nature</i>, vol. 589, no. 7840, pp. 52–58, 2021, doi: 10.1038/s41586-020-03070-1.</li>
+      <li>[9] X. Xu et al., "11 TOPS photonic convolutional accelerator for optical neural networks," <i>Nature</i>, vol. 589, no. 7840, pp. 44–51, 2021, doi: 10.1038/s41586-020-03063-0.</li>
+      <li>[10] J. Chang, V. Sitzmann, X. Dun, W. Heidrich, and G. Wetzstein, "Hybrid optical-electronic convolutional neural networks with optimized diffractive optics for image classification," <i>Sci. Rep.</i>, vol. 8, art. 12324, 2018, doi: 10.1038/s41598-018-30619-y.</li>
+      <li>[11] F. T. S. Yu, T. Lu, X. Yang, and D. A. Gregory, "Optical neural network with pocket-sized liquid-crystal televisions," <i>Opt. Lett.</i>, vol. 15, no. 15, pp. 863–865, 1990, doi: 10.1364/OL.15.000863.</li>
+      <li>[12] J. Spall, X. Guo, T. D. Barrett, and A. I. Lvovsky, "Fully reconfigurable coherent optical vector–matrix multiplication," <i>Opt. Lett.</i>, vol. 45, no. 20, pp. 5752–5755, 2020, doi: 10.1364/OL.401675.</li>
+      <li>[13] S.-T. Wu and K.-C. Lim, "Absorption and scattering measurements of nematic liquid crystals," <i>Appl. Opt.</i>, vol. 26, no. 9, pp. 1722–1727, 1987, doi: 10.1364/AO.26.001722.</li>
+      <li>[14] P. M. Alt and P. Pleshko, "Scanning limitations of liquid-crystal displays," <i>IEEE Trans. Electron Devices</i>, vol. 21, no. 2, pp. 146–155, 1974, doi: 10.1109/T-ED.1974.17884.</li>
+      <li>[15] L. G. Wright et al., "Deep physical neural networks trained with backpropagation," <i>Nature</i>, vol. 601, no. 7894, pp. 549–555, 2022, doi: 10.1038/s41586-021-04223-6.</li>
+      <li>[16] T. W. Hughes, M. Minkov, Y. Shi, and S. Fan, "Training of photonic neural networks through in situ backpropagation and gradient measurement," <i>Optica</i>, vol. 5, no. 7, pp. 864–871, 2018, doi: 10.1364/OPTICA.5.000864.</li>
+      <li>[17] J. W. Goodman, <i>Introduction to Fourier Optics</i>, 4th ed. New York, NY, USA: W. H. Freeman, 2017, ISBN 978-1-319-11916-4.</li>
+      <li>[18] K. Lu and B. E. A. Saleh, "Theory and design of the liquid crystal TV as an optical spatial phase modulator," <i>Opt. Eng.</i>, vol. 29, no. 3, pp. 240–246, 1990, doi: 10.1117/12.55584.</li>
+      <li>[19] J. C. Spall, "Implementation of the simultaneous perturbation algorithm for stochastic optimization," <i>IEEE Trans. Aerosp. Electron. Syst.</i>, vol. 34, no. 3, pp. 817–823, 1998, doi: 10.1109/7.705889.</li>
+      <li>[20] Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, "Gradient-based learning applied to document recognition," <i>Proc. IEEE</i>, vol. 86, no. 11, pp. 2278–2324, 1998, doi: 10.1109/5.726791.</li>
+      <li>[21] I. Haller, "Thermodynamic and static properties of liquid crystals," <i>Prog. Solid State Chem.</i>, vol. 10, pp. 103–118, 1975, doi: 10.1016/0079-6786(75)90008-4.</li>
+      <li>[22] J. Li, C.-H. Wen, S. Gauza, R. Lu, and S.-T. Wu, "Refractive indices of liquid crystals for display applications," <i>J. Display Technol.</i>, vol. 1, no. 1, pp. 51–61, 2005, doi: 10.1109/JDT.2005.853357.</li>
+      <li>[23] H. Xiao, K. Rasul, and R. Vollgraf, "Fashion-MNIST: a Novel Image Dataset for Benchmarking Machine Learning Algorithms," <i>arXiv:1708.07747</i>, 2017, doi: 10.48550/arXiv.1708.07747.</li>
+      <li>[24] T. Xu et al., "Physical neural networks using sharpness-aware training," <i>Nat. Commun.</i>, vol. 17, art. 1766, 2026, doi: 10.1038/s41467-026-68470-9.</li>
+    </ol>
+  </div>
+</div>
+</body>
+</html>
