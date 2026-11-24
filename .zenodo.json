@@ -18,5 +18,13 @@
     "angular spectrum method",
     "nematic liquid crystal",
     "Alt-Pleshko limit"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.1364/opticaopen.35085502",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "publication-preprint"
+    }
   ]
 }

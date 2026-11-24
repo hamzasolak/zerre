@@ -2,6 +2,8 @@
 
 Bu klasör, **ZERRE (Model H) Ortak-Yol Kırınımlı Optoelektronik Hibrit Sinir Ağı İşlemcisi** tasarım ve dalga-optiği simülasyon çalışmasının Türkçe ve İngilizce yayın sürümlerini üç farklı formatta düzenli şekilde barındırır.
 
+> **Yayınlanan Ön Baskı (Optica Open Preprint):** [doi:10.1364/opticaopen.35085502](https://doi.org/10.1364/opticaopen.35085502) · Preprint ID: `137810` · Sürüm: `V1` (24 Kasım 2026) · Lisans: **CC BY 4.0** · Birebir eşleşen kod sürümü: [`v0.5.0`](https://github.com/hamzasolak/zerre/releases/tag/v0.5.0)
+
 ---
 
 ## Klasör Yapısı / Directory Structure
@@ -31,6 +33,7 @@ makale/
 └── scripts/                        # Çok-tohum kıyaslama çıktıları, şekil ve PDF üretim betikleri
     ├── paper_results.json          # 3 tohumlu ([7, 19, 42], N_test=1000) doğrulama sonuçları
     ├── realism_results.json
+    ├── remedies_v06_results.json   # v0.6 teknik çözümler çok-tohumlu doğrulama çıktıları
     ├── generate_paper_figures.py
     └── build_paper_pdf.py
 ```

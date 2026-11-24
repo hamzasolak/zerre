@@ -159,6 +159,70 @@ if TORCH_AVAILABLE:
         def forward(self, img_batch):
             return _PATFunction.apply(img_batch, self.W_param, self.surrogate, self.hardware_forward_fn)
 
+    class FoldedMultiPassSurrogateTorch(nn.Module):
+        """v0.6 katlanmış L-katmanlı + diferansiyel okuma + kalibre edilebilir vekil PyTorch modülü."""
+
+        def __init__(self, n_grid=128, n_ito=32, cam_n=8, n_layers=2,
+                     modulation="jones", differential=True):
+            super().__init__()
+            self.N = int(n_grid)
+            self.n_ito = int(n_ito)
+            self.cam_n = int(cam_n)
+            self.n_layers = int(n_layers)
+            self.modulation = modulation
+            self.differential = bool(differential)
+
+            z_list = (
+                [0.05, 0.05] if self.n_layers == 1
+                else ([0.035, 0.035, 0.035] if self.n_layers == 2
+                      else [0.10 / float(self.n_layers + 1)] * (self.n_layers + 1))
+            )
+            for idx, z in enumerate(z_list):
+                self.register_buffer(f"H_{idx}", DifferentiableSurrogateTwin._make_transfer(n_grid, PIX, LAMBDA, z))
+            self.register_buffer("v_tab", torch.tensor(V_TAB, dtype=torch.float32))
+            self.phi_tab = nn.Parameter(torch.tensor(PHI_TAB, dtype=torch.float32))
+            self.log_gamma = nn.Parameter(torch.zeros(1, dtype=torch.float32))
+
+            cell_px = int(n_grid * 0.75)
+            self.rep = max(1, cell_px // n_ito)
+            self.side = self.rep * n_ito
+            self.o_cell = (n_grid - self.side) // 2
+            self.up = max(1, int(n_grid * 0.55) // 28)
+            self.gsz = self.up * 28
+            self.o_in = (n_grid - self.gsz) // 2
+
+        def _lc_phase(self, V):
+            Vc = torch.clamp(V, 0.0, 5.0)
+            idx = torch.clamp(torch.searchsorted(self.v_tab, Vc, right=True) - 1, 0, len(self.v_tab) - 2)
+            v0, v1 = self.v_tab[idx], self.v_tab[idx + 1]
+            p0, p1 = self.phi_tab[idx], self.phi_tab[idx + 1]
+            return p0 + (Vc - v0) / (v1 - v0 + 1e-12) * (p1 - p0)
+
+        def forward(self, img28_batch, W_list):
+            B = img28_batch.shape[0]
+            A = torch.zeros((B, self.N, self.N), dtype=torch.complex64, device=img28_batch.device)
+            big = img28_batch.repeat_interleave(self.up, dim=1).repeat_interleave(self.up, dim=2)
+            A[:, self.o_in:self.o_in + self.gsz, self.o_in:self.o_in + self.gsz] = big.to(torch.complex64)
+            E = torch.fft.ifft2(torch.fft.fft2(A) * getattr(self, "H_0"))
+
+            for l in range(self.n_layers):
+                phi = self._lc_phase(W_list[l])
+                t_px = torch.exp(1j * phi) if self.modulation == "phase" else (torch.sin(phi / 2.0) * torch.exp(1j * (phi / 2.0)))
+                tile = t_px.repeat_interleave(self.rep, dim=0).repeat_interleave(self.rep, dim=1)
+                M = torch.zeros((self.N, self.N), dtype=torch.complex64, device=img28_batch.device)
+                M[self.o_cell:self.o_cell + self.side, self.o_cell:self.o_cell + self.side] = tile
+                E = torch.fft.ifft2(torch.fft.fft2(E * M) * getattr(self, f"H_{l + 1}"))
+
+            I = torch.pow(torch.clamp(torch.abs(E) ** 2, min=1e-12), torch.exp(self.log_gamma))
+            p = self.N // self.cam_n
+            lim = p * self.cam_n
+            if not self.differential:
+                return I[:, :lim, :lim].reshape(B, self.cam_n, p, self.cam_n, p).mean(dim=(2, 4)).reshape(B, -1)
+            hp = p // 2
+            lim_y = 2 * hp * self.cam_n
+            blk = I[:, :lim_y, :lim].reshape(B, self.cam_n, 2, hp, self.cam_n, p)
+            return (blk[:, :, 0].mean(dim=(2, 4)) - blk[:, :, 1].mean(dim=(2, 4))).reshape(B, -1)
+
 
 def main():
     if TORCH_AVAILABLE:

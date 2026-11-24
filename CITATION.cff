@@ -19,3 +19,17 @@ keywords:
   - physics-aware training
   - liquid crystal spatial light modulator
   - Alt-Pleshko limit
+preferred-citation:
+  type: article
+  title: "ZERRE (Model H): Wave-Optics Design, Physical Synthesis, and Physics-Aware Training of a Common-Path Optoelectronic Processor"
+  authors:
+    - family-names: "Solak"
+      given-names: "Hamza"
+      email: "eng.hamzasolak@gmail.com"
+      orcid: "https://orcid.org/0009-0004-7541-9620"
+      affiliation: "Independent Researcher, Türkiye"
+  journal: "Optica Open"
+  year: 2026
+  month: 11
+  doi: "10.1364/opticaopen.35085502"
+  url: "https://doi.org/10.1364/opticaopen.35085502"
